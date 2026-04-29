@@ -73,8 +73,8 @@ const SignIn = () => {
     useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [isValidSubmit, setIsValidSubmit] = useState<boolean>(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  // const router = useRouter();
+  // const searchParams = useSearchParams();
 
   const form = useForm<SignInFormField>({
     resolver: zodResolver(signInSchema),

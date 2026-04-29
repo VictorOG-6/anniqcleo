@@ -88,8 +88,8 @@ const SLIDES = [
 const SLIDE_INTERVAL_MS = 5500;
 
 const SignUp = () => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  // const router = useRouter();
+  // const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
