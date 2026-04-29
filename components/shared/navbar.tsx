@@ -51,29 +51,45 @@ const Navbar = () => {
       }
 
       setLastScrollY(currentScrollY);
-
-      window.addEventListener("scroll", handleScroll);
-
-      return () => window.removeEventListener("scroll", handleScroll);
     };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 ${showNavbar ? "translate-y-0" : "translate-y-full"} ${scrolledUp ? "bg-white shadow-md py-4" : "bg-transparent py-6"}`}
+      className={`fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${
+        showNavbar ? "translate-y-0" : "-translate-y-full"
+      } ${scrolledUp ? "bg-white shadow-md py-4" : "bg-white lg:bg-transparent py-6"}`}
     >
-      <div className="max-w-7xl mx-auto flex items-center justify-between text-base text-black px-2 md:px-0">
+      <div className="max-w-7xl mx-auto flex items-center justify-between text-base text-black px-4 md:px-0">
         <nav className="hidden md:flex items-center gap-12 font-inter">
           {navLinks.map((link) => (
             <Link
               href={link.href}
               key={link.href}
-              className={`transition-all duration-300 cursor-pointer hover:text-primary ${isActive(link.href) ? "text-primary underline" : "text-black"}`}
+              className={`transition-all duration-300 cursor-pointer hover:text-primary ${
+                isActive(link.href) ? "text-primary underline" : "text-black"
+              }`}
             >
               {link.name}
             </Link>
           ))}
         </nav>
+
         <Link href={"/"} className="cursor-pointer">
           <img
             src={"/logo.png"}
@@ -81,7 +97,8 @@ const Navbar = () => {
             className="w-45 h-10 md:w-60 md:h-24 object-cover"
           />
         </Link>
-        <div className="flex items-center gap-8 text-black">
+
+        <div className="flex items-center gap-5 md:gap-8 text-black">
           <Search
             size={24}
             className="cursor-pointer transition-colors duration-300 hover:text-primary"
@@ -141,6 +158,7 @@ const Navbar = () => {
               </div>
             </PopoverContent>
           </Popover>
+
           {isUser ? (
             <Popover>
               <PopoverTrigger>
@@ -151,32 +169,15 @@ const Navbar = () => {
               </PopoverTrigger>
               <PopoverContent>
                 <div className="flex flex-col items-center">
-                  {isUser ? (
-                    <div className="relative text-black hover:text-[#0A66C2] cursor-pointer">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#1F1F1F] text-white text-sm">
-                        {/* {getInitials(user.name)} */}
-                      </div>
-                      <div className="absolute -right-2.5 -bottom-2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-200">
-                        <Camera size={14} />
-                      </div>
+                  <div className="relative text-black hover:text-[#0A66C2] cursor-pointer">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#1F1F1F] text-white text-sm" />
+                    <div className="absolute -right-2.5 -bottom-2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-200">
+                      <Camera size={14} />
                     </div>
-                  ) : (
-                    <div className="relative">
-                      <Image
-                        src="/test1.png"
-                        alt="User profile"
-                        width={50}
-                        height={50}
-                        className="rounded-full"
-                      />
-                    </div>
-                  )}
-                  {/* <h2 className='mt-2'>{user?.name}</h2> */}
-                  {/* <p className='text-xs text-gray-600 mb-2'>{user?.email}</p> */}
+                  </div>
                   <button className="rounded-xl bg-[#E2E8F0] flex items-center justify-center px-2.5 py-1.5 mb-3">
                     <div className="text-gray-600 flex items-center gap-2 hover:text-red-500 cursor-pointer">
                       <LogOut size={14} />
-                      {/* <p className='text-sm'>{isLoading ? 'Signing out…' : 'Sign Out'}</p> */}
                     </div>
                   </button>
                   <div className="flex items-center gap-1.5 text-black text-[10px]">
@@ -188,18 +189,19 @@ const Navbar = () => {
               </PopoverContent>
             </Popover>
           ) : (
-            <Link href={"/sign-in"}>
-              <button className="hidden bg-primary cursor-pointer w-25 rounded-md shadow-md text-white text-sm md:flex items-center justify-center py-1.5 px-2 transition-all duration-300 hover:bg-primary/80">
+            <Link href={"/sign-in"} className="hidden md:block">
+              <button className="bg-primary cursor-pointer w-25 rounded-md shadow-md text-white text-sm md:flex items-center justify-center py-1.5 px-2 transition-all duration-300 hover:bg-primary/80">
                 Sign in
               </button>
             </Link>
           )}
+
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="block md:hidden transition-all duration-300"
           >
             {isOpen ? (
-              <X color="000" size={24} />
+              <X color="#000" size={24} />
             ) : (
               <Menu color="#000" size={24} />
             )}
@@ -207,39 +209,52 @@ const Navbar = () => {
         </div>
       </div>
 
+      {/* Sidebar: starts below navbar (top-16), slides in from the LEFT */}
       <aside
-        className={`relative z-40 w-70 h-screen flex flex-col items-center shadow-xl transition-all duration-500 ease-in-out md:hidden ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed top-16 left-0 z-40 w-72 h-[calc(100vh-4rem)] bg-white flex flex-col items-center gap-6 pt-8 shadow-xl transition-transform duration-500 ease-in-out md:hidden ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
         {isUser && (
-          <div>
+          <div className="flex flex-col items-center gap-1">
             <Avatar>
-              <AvatarImage></AvatarImage>
-              <AvatarFallback></AvatarFallback>
+              <AvatarImage />
+              <AvatarFallback />
             </Avatar>
-            <h2></h2>
-            <p></p>
+            <h2 className="text-sm font-medium" />
+            <p className="text-xs text-gray-500" />
           </div>
         )}
-        {navLinks.map((link) => (
-          <div
-            key={link.href}
-            className="px-2 py-1.5 border-b border-[#8E8E93]"
-          >
-            <Link href={link.href} className="font-inter text-sm text-black">
-              {link.href}
+
+        <nav className="w-full flex flex-col">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setIsOpen(false)}
+              className={`px-6 py-3 border-b border-[#8E8E93] font-inter text-sm hover:text-primary transition-colors ${
+                isActive(link.href) ? "text-primary" : "text-black"
+              }`}
+            >
+              {link.name}
             </Link>
-          </div>
-        ))}
+          ))}
+        </nav>
+
         <button
-          className={`${isUser ? "bg-red-500" : "bg-primary"} rounded-md shadow-md text-white text-sm flex items-center justify-center py-1.5 px-2`}
+          className={`${
+            isUser ? "bg-red-500" : "bg-primary"
+          } rounded-md shadow-md text-white text-sm flex items-center justify-center py-1.5 px-4`}
         >
           {isUser ? "Sign out" : "Sign in"}
         </button>
       </aside>
+
+      {/* Overlay: starts below navbar so the header row stays fully interactive */}
       {isOpen && (
         <div
           onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+          className="fixed inset-x-0 h-screen top-16 bottom-0 bg-black/40 z-30 md:hidden"
         />
       )}
     </header>

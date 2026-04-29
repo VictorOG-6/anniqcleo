@@ -41,6 +41,29 @@ interface SignInResponse {
   };
 }
 
+const SLIDES = [
+  {
+    tagline:
+      "A botanical-powered skincare and beauty for skin that looks as good as it feels.",
+    src: "/images/contact1.avif",
+    alt: "Anniqcleo skincare and beauty",
+  },
+  {
+    tagline:
+      "The Anniqcleo Lip Kit — rich, lasting color and a comfortable finish for every look.",
+    src: "/images/contact2.avif",
+    alt: "Anniqcleo Lip Kit",
+  },
+  {
+    tagline:
+      "The Anniqcleo Acne Kit — a gentle routine to help clear blemishes and support calmer skin.",
+    src: "/images/contact3.avif",
+    alt: "Anniqcleo Acne Kit",
+  },
+] as const;
+
+const SLIDE_INTERVAL_MS = 5500;
+
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
@@ -109,6 +132,17 @@ const SignIn = () => {
     }
   }, [form.formState.isValid]);
 
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setSlideIndex((i) => (i + 1) % SLIDES.length);
+    }, SLIDE_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const slide = SLIDES[slideIndex];
+
   const handleFormError = (errors: any) => {
     console.log("Form validation errors:", errors);
     // Show first error to user
@@ -119,7 +153,7 @@ const SignIn = () => {
   };
 
   return (
-    <main className="w-screen h-screen bg-foreground">
+    <main className="w-screen bg-foreground">
       <section className="max-w-7xl mx-auto py-16 flex justify-between">
         <div className="w-150 bg-white rounded-2xl border border-[#66666650] px-20 pt-2 pb-12">
           <div className="flex justify-center">
@@ -220,20 +254,46 @@ const SignIn = () => {
             </div>
           </div>
         </div>
-        <div className="hidden md:flex items-center">
-          <div className="flex flex-col items-center">
-            <h2 className="text-3xl font-semibold text-black mb-2">
+        <div className="hidden md:flex items-center justify-center flex-1 min-w-0">
+          <div className="flex flex-col items-center max-w-md px-4">
+            <h2 className="text-3xl font-semibold text-primary mb-2">
               Shop with Anniqcleo
             </h2>
-            <p className="w-100 text-xl text-black mb-8 text-center">
-              Shop our complete range of botanical powered skincare essentials.
+            <p
+              key={slideIndex}
+              className="w-full text-xl text-secondary text-center mb-8 min-h-18 flex items-center justify-center animate-in fade-in duration-300"
+            >
+              {slide.tagline}
             </p>
             <Image
-              src={"/images/contact1.avif"}
-              alt="Content"
+              key={slide.src}
+              src={slide.src}
+              alt={slide.alt}
               width={400}
               height={400}
+              className="rounded-2xl object-cover w-full max-w-[400px] h-auto aspect-square"
             />
+            <div
+              className="flex items-center justify-center gap-3 mt-8"
+              role="tablist"
+              aria-label="Promotional slides"
+            >
+              {SLIDES.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === slideIndex}
+                  aria-label={`Slide ${i + 1}`}
+                  onClick={() => setSlideIndex(i)}
+                  className={`h-3 w-3 rounded-full transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+                    i === slideIndex
+                      ? "bg-primary scale-110"
+                      : "bg-black/25 hover:bg-black/40"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </section>
