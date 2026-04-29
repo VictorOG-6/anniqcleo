@@ -158,41 +158,41 @@ const SignUp = () => {
   const passwordsDontMatch =
     watchPassword && watchConfirmPassword !== watchConfirmPassword;
 
-  const onSubmit: SubmitHandler<SignUpFormField> = async (values) => {
-    setIsLoading(true);
+  // const onSubmit: SubmitHandler<SignUpFormField> = async (values) => {
+  //   setIsLoading(true);
 
-    try {
-      const { data } = await $http.post<SignUpResponse>("/user", values);
+  //   try {
+  //     const { data } = await $http.post<SignUpResponse>("/user", values);
 
-      const decoded = validateToken(data.data.access_token);
-      await storeAuthToken(data.data.access_token);
-      addAccessTokenToHttpInstance(data.data.access_token);
+  //     const decoded = validateToken(data.data.access_token);
+  //     await storeAuthToken(data.data.access_token);
+  //     addAccessTokenToHttpInstance(data.data.access_token);
 
-      sessionStorage.setItem(
-        "user_session",
-        JSON.stringify({
-          email: data.data.user.email,
-          name: data.data.user.email,
-        }),
-      );
+  //     sessionStorage.setItem(
+  //       "user_session",
+  //       JSON.stringify({
+  //         email: data.data.user.email,
+  //         name: data.data.user.email,
+  //       }),
+  //     );
 
-      const redirectUri = searchParams.get("redirectUri");
-      router.push(redirectUri || "/");
-      router.refresh();
-    } catch (error) {
-      console.error("Sign in error:", error);
-      if (error instanceof AxiosError) {
-        processError(error);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  //     const redirectUri = searchParams.get("redirectUri");
+  //     router.push(redirectUri || "/");
+  //     router.refresh();
+  //   } catch (error) {
+  //     console.error("Sign in error:", error);
+  //     if (error instanceof AxiosError) {
+  //       processError(error);
+  //     }
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
 
-  const signInWithGoogle = () => {
-    setIsGoogleAuthLoading(true);
-    window.location.href = `${API_URL}/auth/google`;
-  };
+  // const signInWithGoogle = () => {
+  //   setIsGoogleAuthLoading(true);
+  //   window.location.href = `${API_URL}/auth/google`;
+  // };
 
   useEffect(() => {
     if (!form.formState.isValid || !acceptTerms) {
@@ -240,7 +240,8 @@ const SignUp = () => {
                 Log in
               </Link>
             </p>
-            <form onSubmit={form.handleSubmit(onSubmit, handleFormError)}>
+            {/* <form onSubmit={form.handleSubmit(onSubmit, handleFormError)}> */}
+            <form>
               <FieldGroup>
                 <FieldSet>
                   <Field>
@@ -420,7 +421,7 @@ const SignUp = () => {
             </div>
             <div className="flex justify-center mt-4">
               <button
-                onClick={signInWithGoogle}
+                // onClick={signInWithGoogle}
                 disabled={isGoogleAuthLoading || isLoading}
                 className="w-62.5 flex items-center justify-center gap-4 border border-[#333333] rounded-3xl text-[#333333] text-sm py-3 cursor-pointer"
               >
