@@ -1,4 +1,5 @@
 import FeaturedProducts from "@/components/shared/featured-products";
+import MediaPlayer from "@/components/shared/media-player";
 import OtherProducts from "@/components/shared/other-products";
 import TextBanner from "@/components/shared/text-banner";
 import { heroContent } from "@/constants/data";
@@ -215,6 +216,7 @@ export default function Home() {
         </div>
       </section>
       <OtherProducts />
+      <MediaPlayer />
     </main>
   );
 }
