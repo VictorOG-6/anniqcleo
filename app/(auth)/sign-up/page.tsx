@@ -1,7 +1,6 @@
 "use client";
 
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
@@ -9,13 +8,14 @@ import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { Check, Eye, EyeOff, X } from "lucide-react";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { $http, addAccessTokenToHttpInstance } from "@/lib/http";
-import { storeAuthToken, validateToken } from "@/lib/auth";
+import type { AuthPayload } from "@/lib/auth";
+import { getAuthPayload, storeAuthToken, validateToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import processError from "@/lib/error";
-import { API_URL, APP_URL } from "@/lib/constants";
+import { API_URL } from "@/lib/constants";
 import { toast } from "sonner";
 
 const signUpSchema = z
@@ -52,17 +52,7 @@ const signUpSchema = z
 
 type SignUpFormField = z.infer<typeof signUpSchema>;
 
-interface SignUpResponse {
-  data: {
-    access_token: string;
-    refresh_token: string;
-    user: {
-      name: string;
-      email: string;
-      id: string;
-    };
-  };
-}
+type SignUpResponse = AuthPayload | { data?: AuthPayload };
 
 const SLIDES = [
   {
@@ -88,8 +78,8 @@ const SLIDES = [
 const SLIDE_INTERVAL_MS = 5500;
 
 const SignUp = () => {
-  // const router = useRouter();
-  // const searchParams = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
@@ -158,41 +148,47 @@ const SignUp = () => {
   const passwordsDontMatch =
     watchPassword && watchConfirmPassword !== watchConfirmPassword;
 
-  // const onSubmit: SubmitHandler<SignUpFormField> = async (values) => {
-  //   setIsLoading(true);
+  const onSubmit: SubmitHandler<SignUpFormField> = async (values) => {
+    setIsLoading(true);
 
-  //   try {
-  //     const { data } = await $http.post<SignUpResponse>("/user", values);
+    try {
+      const { data } = await $http.post<SignUpResponse>("/user", values);
+      const authPayload = getAuthPayload(data);
 
-  //     const decoded = validateToken(data.data.access_token);
-  //     await storeAuthToken(data.data.access_token);
-  //     addAccessTokenToHttpInstance(data.data.access_token);
+      validateToken(authPayload.access_token);
+      await storeAuthToken(authPayload.access_token, authPayload.refresh_token);
+      addAccessTokenToHttpInstance(authPayload.access_token);
+      sessionStorage.setItem("access_token", authPayload.access_token);
+      sessionStorage.setItem("refresh_token", authPayload.refresh_token);
 
-  //     sessionStorage.setItem(
-  //       "user_session",
-  //       JSON.stringify({
-  //         email: data.data.user.email,
-  //         name: data.data.user.email,
-  //       }),
-  //     );
+      sessionStorage.setItem(
+        "user_session",
+        JSON.stringify({
+          email: authPayload.user.email,
+          name: authPayload.user.name,
+          role: authPayload.user.role,
+        }),
+      );
 
-  //     const redirectUri = searchParams.get("redirectUri");
-  //     router.push(redirectUri || "/");
-  //     router.refresh();
-  //   } catch (error) {
-  //     console.error("Sign in error:", error);
-  //     if (error instanceof AxiosError) {
-  //       processError(error);
-  //     }
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+      const redirectUri = searchParams.get("redirectUri");
+      router.push(redirectUri || "/");
+      router.refresh();
+    } catch (error) {
+      console.error("Sign in error:", error);
+      if (error instanceof AxiosError) {
+        processError(error);
+      } else {
+        toast.error("Sign up failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  // const signInWithGoogle = () => {
-  //   setIsGoogleAuthLoading(true);
-  //   window.location.href = `${API_URL}/auth/google`;
-  // };
+  const signInWithGoogle = () => {
+    setIsGoogleAuthLoading(true);
+    window.location.href = `${API_URL}/auth/google`;
+  };
 
   useEffect(() => {
     if (!form.formState.isValid || !acceptTerms) {
@@ -240,8 +236,7 @@ const SignUp = () => {
                 Log in
               </Link>
             </p>
-            {/* <form onSubmit={form.handleSubmit(onSubmit, handleFormError)}> */}
-            <form>
+            <form onSubmit={form.handleSubmit(onSubmit, handleFormError)}>
               <FieldGroup>
                 <FieldSet>
                   <Field>
@@ -254,11 +249,11 @@ const SignUp = () => {
                       autoComplete="off"
                       className="border border-[#66666659] h-14 w-full outline-none bg-transparent rounded-md px-2"
                     />
-                    {/* {form.formState.errors.name && (
-                                            <p className="text-sm text-red-600 mt-1" role="alert">
-                                                {form.formState.errors.name.message}
-                                            </p>
-                                        )} */}
+                    {form.formState.errors.name && (
+                      <p className="text-sm text-red-600 mt-1" role="alert">
+                        {form.formState.errors.name.message}
+                      </p>
+                    )}
                   </Field>
                   <Field>
                     <FieldLabel>Email address</FieldLabel>
@@ -270,11 +265,11 @@ const SignUp = () => {
                       autoComplete="off"
                       className="border border-[#66666659] h-14 w-full outline-none bg-transparent rounded-md px-2"
                     />
-                    {/* {form.formState.errors.email && (
-                                            <p className="text-sm text-red-600 mt-1" role="alert">
-                                                {form.formState.errors.email.message}
-                                            </p>
-                                        )} */}
+                    {form.formState.errors.email && (
+                      <p className="text-sm text-red-600 mt-1" role="alert">
+                        {form.formState.errors.email.message}
+                      </p>
+                    )}
                   </Field>
                   <Field>
                     <FieldLabel>Password</FieldLabel>
@@ -327,11 +322,11 @@ const SignUp = () => {
                         })}
                       </div>
                     )}
-                    {/* {form.formState.errors.password && (
-                                            <p className="text-sm text-red-600 mt-1" role="alert">
-                                                {form.formState.errors.password.message}
-                                            </p>
-                                        )} */}
+                    {form.formState.errors.password && (
+                      <p className="text-sm text-red-600 mt-1" role="alert">
+                        {form.formState.errors.password.message}
+                      </p>
+                    )}
                   </Field>
                   <Field>
                     <FieldLabel>Confirm Password</FieldLabel>
@@ -421,7 +416,7 @@ const SignUp = () => {
             </div>
             <div className="flex justify-center mt-4">
               <button
-                // onClick={signInWithGoogle}
+                onClick={signInWithGoogle}
                 disabled={isGoogleAuthLoading || isLoading}
                 className="w-62.5 flex items-center justify-center gap-4 border border-[#333333] rounded-3xl text-[#333333] text-sm py-3 cursor-pointer"
               >

@@ -38,7 +38,7 @@ const processError = (error: AxiosError, cb?: CallableFunction) => {
     msg = (error?.response?.data as Record<string, any>)?.detail;
 
     if (msg == "Invalid Credentials") {
-      window.location.href = "/login";
+      window.location.href = "/sign-in";
     }
 
     if (cb) {

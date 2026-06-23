@@ -1,4 +1,5 @@
 import { jwtDecode } from "jwt-decode";
+import type { UserRole } from "@/types";
 
 interface DecodedToken {
   exp: number;
@@ -6,17 +7,54 @@ interface DecodedToken {
   [key: string]: unknown;
 }
 
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  profile_image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  role: UserRole;
+}
+
+export interface AuthPayload {
+  user: AuthUser;
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+}
+
+type AuthResponse = AuthPayload | { data?: AuthPayload };
+
+export const getAuthPayload = (response: AuthResponse): AuthPayload => {
+  const payload =
+    "access_token" in response && response.access_token
+      ? response
+      : "data" in response
+        ? response.data
+        : undefined;
+
+  if (!payload?.access_token || !payload.refresh_token) {
+    throw new Error("Invalid authentication response");
+  }
+
+  return payload;
+};
+
 /**
  * Securely store authentication token
  * Uses httpOnly cookies for web (most secure) or encrypted storage for mobile
  */
-export const storeAuthToken = async (token: string): Promise<void> => {
+export const storeAuthToken = async (
+  accessToken: string,
+  refreshToken: string,
+): Promise<void> => {
   try {
     // For Next.js web app - use server action or API route to set httpOnly cookie
     await fetch("/api/auth/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ accessToken, refreshToken }),
       credentials: "include", // Important for cookies
     });
   } catch (error) {

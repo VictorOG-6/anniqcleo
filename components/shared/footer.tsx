@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
 import { FaCopyright, FaInstagram, FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -17,15 +16,24 @@ const Footer = () => {
               height={68}
             />
             <div className="hidden md:flex items-center gap-5">
-              <div className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary">
+              <Link
+                href="https://www.x.com/anniqcleo"
+                className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary"
+              >
                 <FaXTwitter size={30} />
-              </div>
-              <div className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary">
+              </Link>
+              <Link
+                href="https://www.instagram.com/anniqcleo"
+                className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary"
+              >
                 <FaInstagram size={30} />
-              </div>
-              <div className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary">
+              </Link>
+              <Link
+                href="https://www.tiktok.com/@anniqcleo"
+                className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary"
+              >
                 <FaTiktok size={30} />
-              </div>
+              </Link>
             </div>
             <span className="hidden md:flex items-center gap-0.5 text-secondary text-lg font-semibold mt-1">
               <FaCopyright size={20} />
@@ -99,15 +107,24 @@ const Footer = () => {
           </div>
           <div className="flex md:hidden flex-col items-center gap-10">
             <div className="hidden md:flex items-center gap-5">
-              <div className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary">
+              <Link
+                href="https://www.x.com/anniqcleo"
+                className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary"
+              >
                 <FaXTwitter size={30} />
-              </div>
-              <div className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary">
+              </Link>
+              <Link
+                href="https://www.instagram.com/anniqcleo"
+                className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary"
+              >
                 <FaInstagram size={30} />
-              </div>
-              <div className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary">
+              </Link>
+              <Link
+                href="https://www.tiktok.com/@anniqcleo"
+                className="w-12.5 h-12.5 rounded-full bg-white flex items-center justify-center text-secondary cursor-pointer transition-all duration-300 hover:text-primary"
+              >
                 <FaTiktok size={30} />
-              </div>
+              </Link>
             </div>
             <span className="flex md:hidden items-center gap-0.5 text-secondary text-lg font-semibold mt-5">
               <FaCopyright size={20} />

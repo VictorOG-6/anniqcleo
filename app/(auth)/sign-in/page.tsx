@@ -2,7 +2,8 @@
 
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { storeAuthToken, validateToken } from "@/lib/auth";
+import type { AuthPayload } from "@/lib/auth";
+import { getAuthPayload, storeAuthToken, validateToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
 import processError from "@/lib/error";
 import { $http, addAccessTokenToHttpInstance } from "@/lib/http";
@@ -11,7 +12,7 @@ import { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -29,17 +30,9 @@ const signInSchema = z.object({
 
 type SignInFormField = z.infer<typeof signInSchema>;
 
-interface SignInResponse {
-  data: {
-    access_token: string;
-    refresh_token: string;
-    user: {
-      name: string;
-      email: string;
-      id: string;
-    };
-  };
-}
+type SignInResponse = AuthPayload | { data?: AuthPayload };
+
+const ADMIN_ROLES = new Set(["admin", "staff"]);
 
 const SLIDES = [
   {
@@ -73,8 +66,7 @@ const SignIn = () => {
     useState<boolean>(false);
   const [error, setError] = useState<string>("");
   const [isValidSubmit, setIsValidSubmit] = useState<boolean>(false);
-  // const router = useRouter();
-  // const searchParams = useSearchParams();
+  const router = useRouter();
 
   const form = useForm<SignInFormField>({
     resolver: zodResolver(signInSchema),
@@ -85,44 +77,53 @@ const SignIn = () => {
     mode: "onChange",
   });
 
-  // const onSubmit: SubmitHandler<SignInFormField> = async (values) => {
-  //   setIsLoading(true);
-  //   setError("");
+  const onSubmit: SubmitHandler<SignInFormField> = async (values) => {
+    setIsLoading(true);
+    setError("");
 
-  //   try {
-  //     // Call FastAPI backend
-  //     const { data } = await $http.post<SignInResponse>("/auth/login", values);
+    try {
+      // Call FastAPI backend
+      const { data } = await $http.post<SignInResponse>("/auth/login", values);
+      const authPayload = getAuthPayload(data);
 
-  //     const decoded = validateToken(data.data.access_token);
-  //     await storeAuthToken(data.data.access_token);
-  //     addAccessTokenToHttpInstance(data.data.access_token);
+      validateToken(authPayload.access_token);
+      await storeAuthToken(authPayload.access_token, authPayload.refresh_token);
+      addAccessTokenToHttpInstance(authPayload.access_token);
+      sessionStorage.setItem("access_token", authPayload.access_token);
+      sessionStorage.setItem("refresh_token", authPayload.refresh_token);
 
-  //     // Store user data
-  //     sessionStorage.setItem(
-  //       "user_session",
-  //       JSON.stringify({
-  //         email: data.data.user.email,
-  //         name: data.data.user.name,
-  //       }),
-  //     );
+      // Store user data
+      sessionStorage.setItem(
+        "user_session",
+        JSON.stringify({
+          email: authPayload.user.email,
+          name: authPayload.user.name,
+          role: authPayload.user.role,
+        }),
+      );
 
-  //     const redirectUri = searchParams.get("redirectUri");
-  //     router.push(redirectUri || "/");
-  //     router.refresh();
-  //   } catch (error) {
-  //     console.error("Sign in error:", error);
-  //     if (error instanceof AxiosError) {
-  //       processError(error);
-  //     }
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+      const defaultRedirect = ADMIN_ROLES.has(authPayload.user.role)
+        ? "/admin"
+        : "/";
 
-  // const signInWithGoogle = () => {
-  //   setIsGoogleAuthLoading(true);
-  //   window.location.href = `${API_URL}/auth/google`;
-  // };
+      router.push(defaultRedirect);
+      router.refresh();
+    } catch (error) {
+      console.error("Sign in error:", error);
+      if (error instanceof AxiosError) {
+        processError(error);
+      } else {
+        toast.error("Sign in failed. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signInWithGoogle = () => {
+    setIsGoogleAuthLoading(true);
+    window.location.href = `${API_URL}/auth/google`;
+  };
 
   useEffect(() => {
     if (!form.formState.isValid) {
@@ -170,8 +171,7 @@ const SignIn = () => {
                 Sign up
               </Link>
             </p>
-            {/* <form onSubmit={form.handleSubmit(onSubmit, handleFormError)}> */}
-            <form>
+            <form onSubmit={form.handleSubmit(onSubmit, handleFormError)}>
               <FieldGroup>
                 <FieldSet>
                   <Field>
@@ -184,11 +184,11 @@ const SignIn = () => {
                       autoComplete="off"
                       className="border border-[#66666659] h-14 w-full outline-none bg-transparent rounded-md px-2"
                     />
-                    {/* {form.formState.errors.username && (
-                                            <p className="text-sm text-red-600 mt-1" role="alert">
-                                                {form.formState.errors.username.message}
-                                            </p>
-                                        )} */}
+                    {form.formState.errors.username && (
+                      <p className="text-sm text-red-600 mt-1" role="alert">
+                        {form.formState.errors.username.message}
+                      </p>
+                    )}
                   </Field>
                   <Field>
                     <FieldLabel>Password</FieldLabel>
@@ -217,11 +217,11 @@ const SignIn = () => {
                         )}
                       </button>
                     </div>
-                    {/* {form.formState.errors.password && (
-                                            <p className="text-sm text-red-600 mt-1" role="alert">
-                                                {form.formState.errors.password.message}
-                                            </p>
-                                        )} */}
+                    {form.formState.errors.password && (
+                      <p className="text-sm text-red-600 mt-1" role="alert">
+                        {form.formState.errors.password.message}
+                      </p>
+                    )}
                   </Field>
                 </FieldSet>
               </FieldGroup>

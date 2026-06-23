@@ -6,6 +6,7 @@ import { useForm, ValidationError } from "@formspree/react";
 import { AiFillInstagram } from "react-icons/ai";
 import { FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
+import Link from "next/link";
 
 const Contact = () => {
   const [state, handleSubmit] = useForm("xqkowery");
@@ -33,11 +34,11 @@ const Contact = () => {
             <div className="flex flex-col items-center md:items-start gap-2 md:gap-8 text-white text-base">
               <div className="flex items-center gap-4">
                 <PhoneCall size={20} />
-                +23486748279421
+                +2349094159684
               </div>
               <div className="flex items-center gap-4">
                 <Mail size={20} />
-                anniqcleo@gmail.com
+                Anniqcleobeautyempire@gmail.com
               </div>
               <div className="flex items-center gap-4">
                 <MapPin size={20} />
@@ -45,15 +46,24 @@ const Contact = () => {
               </div>
             </div>
             <div className="flex items-center justify-center md:justify-start gap-4">
-              <div className="w-7.5 h-7.5 rounded-full bg-white flex items-center justify-center text-primary cursor-pointer transition-all duration-300 border hover:text-white hover:bg-primary hover:border-white">
+              <Link
+                href="https://www.x.com/anniqcleo"
+                className="w-7.5 h-7.5 rounded-full bg-white flex items-center justify-center text-primary cursor-pointer transition-all duration-300 border hover:text-white hover:bg-primary hover:border-white"
+              >
                 <FaXTwitter size={20} />
-              </div>
-              <div className="w-7.5 h-7.5 rounded-full bg-white flex items-center justify-center text-primary cursor-pointer transition-all duration-300 border hover:text-white hover:bg-primary hover:border-white">
+              </Link>
+              <Link
+                href="https://www.instagram.com/anniqcleo"
+                className="w-7.5 h-7.5 rounded-full bg-white flex items-center justify-center text-primary cursor-pointer transition-all duration-300 border hover:text-white hover:bg-primary hover:border-white"
+              >
                 <AiFillInstagram size={20} />
-              </div>
-              <div className="w-7.5 h-7.5 rounded-full bg-white flex items-center justify-center text-primary cursor-pointer transition-all duration-300 border hover:text-white hover:bg-primary hover:border-white">
+              </Link>
+              <Link
+                href="https://www.tiktok.com/@anniqcleo"
+                className="w-7.5 h-7.5 rounded-full bg-white flex items-center justify-center text-primary cursor-pointer transition-all duration-300 border hover:text-white hover:bg-primary hover:border-white"
+              >
                 <FaTiktok size={20} />
-              </div>
+              </Link>
             </div>
             <img
               src="/images/contact-bg.png"
@@ -61,8 +71,8 @@ const Contact = () => {
               className="absolute bottom-0 right-0 w-25 h-25 md:w-50 md:h-50 object-cover z-0"
             />
           </div>
-          <form onSubmit={handleSubmit}>
-            <div className="w-full md:w-80 lg:w-111.5 flex flex-col items-start gap-8 text-[#8E8E93] text-sm md:text-base">
+          <form onSubmit={handleSubmit} className="w-full lg:w-111.5">
+            <div className="w-full md:w-80 lg:w-111.5 flex flex-col items-center lg:items-start gap-8 text-[#8E8E93] text-sm md:text-base">
               <div className="w-full flex flex-col items-start gap-4">
                 <label htmlFor="full_name">Full Name</label>
                 <input

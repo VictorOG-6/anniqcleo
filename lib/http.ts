@@ -4,9 +4,6 @@ import { API_URL } from "./constants";
 
 export const $http = axios.create({
   baseURL: API_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
   withCredentials: true,
 });
 
@@ -133,7 +130,7 @@ $http.interceptors.response.use(
 
         // Redirect to login
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          window.location.href = "/sign-in";
         }
 
         return Promise.reject(refreshError);

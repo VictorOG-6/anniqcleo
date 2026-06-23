@@ -5,18 +5,21 @@ import {
   CircleUserRound,
   LogOut,
   Menu,
-  Minus,
-  Plus,
   Search,
   ShoppingBasket,
   X,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import UserAvatar from "./user-avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import CartItems from "./cart-items";
+import { useCart } from "@/contexts/cart/cart-context";
+import { formatToNaira } from "@/lib/utils";
+import { useUserContext } from "@/contexts/user/user-context";
+import { useLogout } from "@/hooks/auth/useLogout";
+import ProfilePictureModal from "./profile-picture-modal";
 
 const navLinks = [
   { name: "Shop", href: "/shop" },
@@ -26,12 +29,20 @@ const navLinks = [
 
 const Navbar = () => {
   const pathname = usePathname();
+  const { user } = useUserContext();
+  const { totalItems, totalPrice } = useCart();
+  const { logout, isLoading } = useLogout();
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isUser, setIsUser] = useState<boolean>(false);
+  const [isProfilePictureModalOpen, setIsProfilePictureModalOpen] =
+    useState<boolean>(false);
   const [showNavbar, setShowNavbar] = useState<boolean>(true);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
   const [scrolledUp, setScrolledUp] = useState<boolean>(false);
   const isActive = (href: string) => pathname === href;
+
+  const handleProfilePictureModalClose = () => {
+    setIsProfilePictureModalOpen(false);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -94,7 +105,7 @@ const Navbar = () => {
           <img
             src={"/logo.png"}
             alt="Anniqcleo Logo"
-            className="w-45 h-10 md:w-60 md:h-24 object-cover"
+            className="w-45 h-10 md:w-50 md:h-14 object-cover"
           />
         </Link>
 
@@ -104,86 +115,112 @@ const Navbar = () => {
             className="cursor-pointer transition-colors duration-300 hover:text-primary"
           />
           <Popover>
-            <PopoverTrigger>
+            <PopoverTrigger className="relative">
               <ShoppingBasket
                 size={24}
                 className="cursor-pointer transition-colors duration-300 hover:text-primary"
               />
+              {totalItems > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
+                  {totalItems}
+                </span>
+              )}
             </PopoverTrigger>
-            <PopoverContent>
-              <div className="flex flex-col items-center gap-7 py-4">
-                <h2 className="font-roboto-mono text-sm font-medium text-primary">
-                  Anniqcleo Cart
-                </h2>
-                <div>
-                  <div className="flex items-center justify-between border-b border-[#8E8E93] gap-10 px-2 pb-2">
-                    <div className="flex items-center gap-2">
-                      <img
-                        src="/images/product1.avif"
-                        alt="Glow Up Body Scrub"
-                        className="w-10 h-10 object-cover"
-                      />
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-sm font-medium text-black">
-                          Glow Up Body Scrub
-                        </h3>
-                        <p className="text-xs text-secondary">₦19,000</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="cursor-pointer text-primary">
-                        <Minus size={14} />
-                      </span>
-                      <p className="text-xs text-secondary font-bold">1</p>
-                      <span className="cursor-pointer text-primary">
-                        <Plus size={14} />
-                      </span>
-                    </div>
-                  </div>
+            <PopoverContent align="end" className="w-86 p-4">
+              <div className="flex flex-col gap-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-roboto-mono text-sm font-medium text-primary">
+                    Anniqcleo Cart
+                  </h2>
+                  <span className="text-xs text-secondary">
+                    {totalItems} item{totalItems === 1 ? "" : "s"}
+                  </span>
                 </div>
-                <div className="w-full flex justify-center">
-                  {isUser ? (
-                    <button className="text-xs cursor-pointer bg-primary text-white rounded-sm shadow-sm px-2 py-1.5 transition-all duration-300 hover:bg-primary/80">
-                      Checkout
-                    </button>
-                  ) : (
-                    <Link
-                      href={"/sign-in"}
-                      className="w-30 flex items-center justify-center text-xs cursor-pointer bg-primary text-white rounded-sm shadow-sm px-2 py-1.5 transition-all duration-300 hover:bg-primary/80"
-                    >
-                      Sign in
-                    </Link>
-                  )}
+
+                <div className="max-h-86 overflow-y-auto pr-1">
+                  <CartItems compact maxItems={3} />
                 </div>
+
+                <div className="flex items-center justify-between border-t border-[#E5E5E5] pt-3 text-sm">
+                  <span className="text-secondary">Subtotal</span>
+                  <span className="font-semibold text-primary">
+                    {formatToNaira(totalPrice)}
+                  </span>
+                </div>
+
+                {user ? (
+                  <Link
+                    href="/cart"
+                    className="w-full flex items-center justify-center rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/80"
+                  >
+                    View cart
+                  </Link>
+                ) : (
+                  <Link
+                    href="/sign-in"
+                    className="w-full flex items-center justify-center rounded-2xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary/80"
+                  >
+                    Sign in
+                  </Link>
+                )}
               </div>
             </PopoverContent>
           </Popover>
 
-          {isUser ? (
+          {user ? (
             <Popover>
-              <PopoverTrigger>
-                <CircleUserRound
-                  size={24}
-                  className="hidden md:block cursor-pointer transition-colors duration-300 hover:text-primary"
+              <PopoverTrigger className="hidden lg:block">
+                <UserAvatar
+                  name={user.name}
+                  seed={user.email}
+                  src={user.profile_image_url}
+                  className="h-8 w-8 cursor-pointer"
                 />
               </PopoverTrigger>
-              <PopoverContent>
+              <PopoverContent className="bg-[#E2E8F0]">
                 <div className="flex flex-col items-center">
                   <div className="relative text-black hover:text-[#0A66C2] cursor-pointer">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#1F1F1F] text-white text-sm" />
-                    <div className="absolute -right-2.5 -bottom-2 w-6 h-6 rounded-full flex items-center justify-center bg-gray-200">
+                    <UserAvatar
+                      name={user.name}
+                      seed={user.email}
+                      src={user.profile_image_url}
+                      className="h-10 w-10"
+                    />
+                    <div
+                      className="absolute -right-2.5 -bottom-2 w-6 h-6 rounded-full flex items-center justify-center bg-white"
+                      onClick={() => setIsProfilePictureModalOpen(true)}
+                      aria-label="Edit profile picture"
+                    >
                       <Camera size={14} />
                     </div>
                   </div>
-                  <button className="rounded-xl bg-[#E2E8F0] flex items-center justify-center px-2.5 py-1.5 mb-3">
-                    <div className="text-gray-600 flex items-center gap-2 hover:text-red-500 cursor-pointer">
+                  <div className="flex flex-col items-center gap-0.5 mt-2">
+                    <h2>Hi! {user.name.split(" ")[0]}</h2>
+                    <p className="text-xs text-gray-500">{user.email}</p>
+                  </div>
+                  <button
+                    className="rounded-xl bg-white flex items-center justify-center px-2.5 py-1.5 my-3 w-45 text-gray-600 duration-300 transition-all hover:text-red-500 cursor-pointer"
+                    onClick={() => logout()}
+                  >
+                    <div className="flex items-center gap-2 ">
                       <LogOut size={14} />
+                      {isLoading ? "Signing out..." : "Sign Out"}
                     </div>
                   </button>
                   <div className="flex items-center gap-1.5 text-black text-[10px]">
-                    <p>Privacy Policy</p>
+                    <Link
+                      href="/privacy-policy"
+                      className="cursor-pointer transition-all duration-300 hover:text-primary"
+                    >
+                      Privacy Policy
+                    </Link>
                     <span className="bg-black w-0.5 h-0.5 rounded-full" />
-                    <p>Terms of Service</p>
+                    <Link
+                      href="/terms-and-condition"
+                      className="cursor-pointer transition-all duration-300 hover:text-primary"
+                    >
+                      Terms and Conditions
+                    </Link>
                   </div>
                 </div>
               </PopoverContent>
@@ -215,14 +252,31 @@ const Navbar = () => {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {isUser && (
+        {user && (
           <div className="flex flex-col items-center gap-1">
-            <Avatar>
-              <AvatarImage />
-              <AvatarFallback />
-            </Avatar>
-            <h2 className="text-sm font-medium" />
-            <p className="text-xs text-gray-500" />
+            <div className="relative">
+              <UserAvatar
+                name={user.name}
+                seed={user.email}
+                src={user.profile_image_url}
+              />
+              <div
+                className="absolute -right-2.5 -bottom-2 w-6 h-6 rounded-full flex items-center justify-center bg-white"
+                onClick={() => setIsProfilePictureModalOpen(true)}
+                aria-label="Edit profile picture"
+              >
+                <Camera size={14} />
+              </div>
+            </div>
+            <UserAvatar
+              name={user.name}
+              seed={user.email}
+              src={user.profile_image_url}
+            />
+            <h2 className="text-sm text-black font-medium">
+              Hi! {user.name.split(" ")[0]}
+            </h2>
+            <p className="text-xs text-gray-500">{user.email}</p>
           </div>
         )}
 
@@ -243,10 +297,11 @@ const Navbar = () => {
 
         <button
           className={`${
-            isUser ? "bg-red-500" : "bg-primary"
+            user ? "bg-red-500" : "bg-primary"
           } rounded-md shadow-md text-white text-sm flex items-center justify-center py-1.5 px-4`}
+          onClick={() => logout()}
         >
-          {isUser ? "Sign out" : "Sign in"}
+          {user ? "Sign out" : isLoading ? "Signing out..." : "Sign in"}
         </button>
       </aside>
 
@@ -257,6 +312,11 @@ const Navbar = () => {
           className="fixed inset-x-0 h-screen top-16 bottom-0 bg-black/40 z-30 md:hidden"
         />
       )}
+
+      <ProfilePictureModal
+        isOpen={isProfilePictureModalOpen}
+        onClose={handleProfilePictureModalClose}
+      />
     </header>
   );
 };

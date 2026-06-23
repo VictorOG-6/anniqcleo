@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Roboto, Inter, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import Providers from "@/lib/provider";
 
 const robotoMono = Roboto_Mono({
   variable: "--font-roboto-mono",
@@ -47,7 +48,7 @@ export default function RootLayout({
       <body
         className={`${roboto.variable} ${robotoMono.variable} ${inter.variable} antialiased flex flex-col items-center`}
       >
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

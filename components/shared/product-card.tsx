@@ -1,5 +1,5 @@
 import { formatToNaira } from "@/lib/utils";
-import Image from "next/image";
+import Link from "next/link";
 import React from "react";
 
 interface ProductCardProps {
@@ -8,6 +8,7 @@ interface ProductCardProps {
   price: number;
   stars: number;
   reviews: number;
+  href?: string;
 }
 
 const ProductCard = ({
@@ -16,9 +17,10 @@ const ProductCard = ({
   price,
   stars,
   reviews,
+  href,
 }: ProductCardProps) => {
-  return (
-    <div className="flex flex-col items-center gap-5">
+  const content = (
+    <>
       <img
         src={image}
         alt={name}
@@ -29,13 +31,32 @@ const ProductCard = ({
         <span className="text-[#96959A] text-sm md:text-xl">
           {formatToNaira(price)}
         </span>
-        <div className="flex items-center justify-between">
-          <img src="/images/5star.png" alt="5 Stars" className="w-16 h-4 md:w-25 md:h-5" />
-          <span className="text-[#96959A] text-xs md:text-xl">{`(${reviews} reviews)`}</span>
-        </div>
+        {stars !== 0 && (
+          <div className="flex items-center justify-between">
+            <img
+              src="/images/5star.png"
+              alt={`${stars} Stars`}
+              className="w-16 h-4 md:w-25 md:h-5"
+            />
+            <span className="text-[#96959A] text-xs md:text-xl">{`(${reviews} reviews)`}</span>
+          </div>
+        )}
       </div>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="flex flex-col items-center gap-5 cursor-pointer transition-transform duration-300 hover:-translate-y-1"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className="flex flex-col items-center gap-5">{content}</div>;
 };
 
 export default ProductCard;

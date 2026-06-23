@@ -1,68 +1,157 @@
-'use client'
+"use client";
 
-import ProductCard from '@/components/shared/product-card'
-import { categories, featuredProducts } from '@/constants/data'
-import { ArrowLeft, ArrowRight, Search } from 'lucide-react'
-import React, { useState } from 'react'
+import ProductCard from "@/components/shared/product-card";
+import useFetchProducts from "@/hooks/product/use-fetch-products";
+import useFetchProductCategoriesSummary from "@/hooks/product/use-fetch-product-categories-summary";
+import { Product, ProductCategoriesSummary } from "@/types";
+import { ArrowLeft, ArrowRight, Search } from "lucide-react";
+import React, { useMemo, useState } from "react";
 
 const Shop = () => {
-    const [activeCategory, setActiveCategory] = useState<string>('All')
-  return (
-    <main className='pt-20 md:pt-28'>
-        <section className='bg-foreground py-20'>
-            <div className='max-w-7xl mx-auto px-5 md:px-0'>
-                <div className='flex flex-col items-center text-center gap-2.5 md:gap-7'>
-                    <h1 className='text-primary text-sm md:text-3xl font-roboto-mono'>
-                        Anniqcleo Collection
-                    </h1>
-                    <p className='w-50 md:w-fit text-center text-secondary text-xs md:text-xl'>Shop our complete range of botanical powered skincare essentials.</p>
-                </div>
-            </div>
-        </section>
-        <section className='max-w-7xl mx-auto flex flex-col gap-10 md:gap-20 px-5 py-8 md:py-10 md:px-0'>
-            <div className='flex flex-col-reverse md:flex-row items-center md:justify-between gap-8 md:gap-0'>
-                <div className='grid grid-cols-3 lg:grid-cols-5 gap-5'>
-                    {categories.map((category: string) => (
-                        <div key={category} className={`flex items-center font-roboto-mono justify-center py-1 px-2 md:px-3.5 cursor-pointer rounded-2xl text-secondary transition-all duration-300 hover:bg-primary hover:text-white ${activeCategory === category ? 'bg-primary text-white' : 'text-secondary bg-foreground'}`} onClick={() => setActiveCategory(category)}>
-                            <p className='text-sm md:text-base'>{category}</p>
-                        </div>
-                    ))}
-                </div>
-                <div className='w-full md:w-[366px] flex items-center gap-3 py-1.5 md:py-3 px-4 border border-[#F0F0F0] rounded-2xl text-secondary'>
-                    <Search size={24}/>
-                    <input
-                        type='text'
-                        placeholder='Search products'
-                        className='w-full border-none outline-none placeholder:text-secondary text-xs md:text-base'
-                    />
-                </div>
-            </div>
-            <div className='w-full grid grid-cols-2 md:grid-cols-4 gap-7'>
-                {featuredProducts.map((product: any) => (
-                    <ProductCard key={product.name} name={product.name} image={product.image} price={product.price} reviews={product.reviews} stars={5} />
-                ))}
-            </div>
-            <div className='w-full flex items-center justify-center'>
-                <div className='flex items-center gap-2'>
-                    <span className='w-11 h-11 flex items-center justify-center rounded-full bg-[#F3F3F3] text-[#C4C4C4]'>
-                        <ArrowLeft size={16}/>
-                    </span>
-                    <div className='flex items-center gap-1'>
-                        <span className='w-11 h-11 flex items-center justify-center rounded-full bg-white border border-[#C4C4C4] text-primary'>
-                            1
-                        </span>
-                        <span className='w-11 h-11 flex items-center justify-center rounded-full bg-[#F3F3F3] border text-black hover:text-primary hover:border-[#C4C4C4] hover:bg-white cursor-pointer'>
-                            2
-                        </span>
-                    </div>
-                    <span className='w-11 h-11 flex items-center justify-center rounded-full bg-[#F3F3F3] text-primary cursor-pointer'>
-                        <ArrowRight size={16}/>
-                    </span>
-                </div>
-            </div>
-        </section>
-    </main>
-  )
-}
+  const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [search, setSearch] = useState<string>("");
+  const [page, setPage] = useState<number>(1);
+  const pageSize = 8;
 
-export default Shop
+  const { data: categories = [] } = useFetchProductCategoriesSummary({
+    status: "published",
+  });
+  const {
+    data: productResponse,
+    isLoading,
+    isFetching,
+  } = useFetchProducts({
+    page_size: pageSize,
+    page,
+    name: search,
+    category: activeCategory === "All" ? undefined : activeCategory,
+    status: "published",
+  });
+
+  const products = useMemo<Product[]>(() => {
+    if (Array.isArray(productResponse)) return productResponse;
+    return productResponse?.data ?? productResponse?.items ?? [];
+  }, [productResponse]);
+
+  const categoryOptions = useMemo(
+    () => [
+      "All",
+      ...categories.map(
+        (category: ProductCategoriesSummary) => category.category,
+      ),
+    ],
+    [categories],
+  );
+
+  const canGoBack = page > 1;
+  const canGoForward = products.length === pageSize;
+
+  return (
+    <main className="pt-20 md:pt-28">
+      <section className="bg-foreground py-20">
+        <div className="max-w-7xl mx-auto px-5 md:px-0">
+          <div className="flex flex-col items-center text-center gap-2.5 md:gap-7">
+            <h1 className="text-primary text-sm md:text-3xl font-roboto-mono">
+              Anniqcleo Collection
+            </h1>
+            <p className="w-50 md:w-fit text-center text-secondary text-xs md:text-xl">
+              Shop our complete range of botanical powered skincare essentials.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section className="max-w-7xl mx-auto flex flex-col gap-10 md:gap-20 px-5 py-8 md:py-10 md:px-0">
+        <div className="flex flex-col-reverse md:flex-row items-center md:justify-between gap-8 md:gap-0">
+          <div className="grid grid-cols-3 lg:grid-cols-5 gap-5">
+            {categoryOptions.map((category: string) => (
+              <div
+                key={category}
+                className={`flex items-center font-roboto-mono justify-center py-1 px-2 md:px-3.5 cursor-pointer rounded-2xl text-secondary transition-all duration-300 hover:bg-primary hover:text-white ${activeCategory === category ? "bg-primary text-white" : "text-secondary bg-foreground"}`}
+                onClick={() => {
+                  setActiveCategory(category);
+                  setPage(1);
+                }}
+              >
+                <p className="text-sm md:text-base">{category}</p>
+              </div>
+            ))}
+          </div>
+          <div className="w-full md:w-[366px] flex items-center gap-3 py-1.5 md:py-3 px-4 border border-[#F0F0F0] rounded-2xl text-secondary">
+            <Search size={24} />
+            <input
+              type="text"
+              placeholder="Search products"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              className="w-full border-none outline-none placeholder:text-secondary text-xs md:text-base"
+            />
+          </div>
+        </div>
+        {isLoading ? (
+          <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-7">
+            {Array.from({ length: pageSize }).map((_, index) => (
+              <div
+                key={index}
+                className="flex flex-col items-center gap-5 animate-pulse"
+              >
+                <div className="w-37.5 h-50 md:w-60 md:h-80 bg-foreground rounded-2xl" />
+                <div className="h-4 w-28 bg-foreground rounded" />
+                <div className="h-4 w-20 bg-foreground rounded" />
+              </div>
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="w-full rounded-2xl bg-foreground px-5 py-16 text-center text-secondary">
+            No products found.
+          </div>
+        ) : (
+          <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-7">
+            {products.map((product: Product) => (
+              <ProductCard
+                key={product.id}
+                name={product.name}
+                image={product.image_url}
+                price={product.price}
+                reviews={product.total_reviews ?? product.reviews?.length}
+                stars={Math.round(product.average_rating)}
+                href={`/products/${product.id}`}
+              />
+            ))}
+          </div>
+        )}
+        <div className="w-full flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={!canGoBack || isFetching}
+              onClick={() =>
+                setPage((currentPage) => Math.max(1, currentPage - 1))
+              }
+              className={`w-11 h-11 flex items-center justify-center rounded-full bg-[#F3F3F3] ${canGoBack ? "text-primary cursor-pointer" : "text-[#C4C4C4]"}`}
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div className="flex items-center gap-1">
+              <span className="w-11 h-11 flex items-center justify-center rounded-full bg-white border border-[#C4C4C4] text-primary">
+                {page}
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={!canGoForward || isFetching}
+              onClick={() => setPage((currentPage) => currentPage + 1)}
+              className={`w-11 h-11 flex items-center justify-center rounded-full bg-[#F3F3F3] ${canGoForward ? "text-primary cursor-pointer" : "text-[#C4C4C4]"}`}
+            >
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+};
+
+export default Shop;
