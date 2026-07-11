@@ -3,7 +3,7 @@
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useEffect, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
@@ -77,7 +77,7 @@ const SLIDES = [
 
 const SLIDE_INTERVAL_MS = 5500;
 
-const SignUp = () => {
+const SignUpContent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -478,4 +478,16 @@ const SignUp = () => {
   );
 };
 
-export default SignUp;
+export default function SignUp() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="h-12 w-12 animate-spin rounded-full border-b-4 border-primary" />
+        </div>
+      }
+    >
+      <SignUpContent />
+    </Suspense>
+  );
+}

@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { validateToken } from "@/lib/auth";
 import { addAccessTokenToHttpInstance } from "@/lib/http";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [error, setError] = useState<string>("");
-  const [status, setStatus] = useState<string>("Processing authentication...");
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("Processing authentication...");
 
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
-        // Get tokens from URL parameters (sent by FastAPI)
         const accessToken = searchParams.get("access_token");
         const refreshToken = searchParams.get("refresh_token");
 
@@ -27,20 +26,20 @@ export default function AuthCallbackPage() {
 
         setStatus("Validating tokens...");
 
-        // Validate tokens
         try {
           validateToken(accessToken);
           validateToken(refreshToken);
-        } catch (validationError) {
+        } catch {
           throw new Error("Invalid tokens received");
         }
 
         setStatus("Creating secure session...");
 
-        // Store tokens in httpOnly cookies via Next.js API route
         const sessionResponse = await fetch("/api/auth/session", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             accessToken,
             refreshToken,
@@ -52,16 +51,13 @@ export default function AuthCallbackPage() {
           throw new Error("Failed to create session");
         }
 
-        // Also store in sessionStorage for axios
         sessionStorage.setItem("access_token", accessToken);
         sessionStorage.setItem("refresh_token", refreshToken);
 
-        // Attach access token to axios instance
         addAccessTokenToHttpInstance(accessToken);
 
         setStatus("Authentication successful! Redirecting...");
 
-        // Small delay for better UX
         setTimeout(() => {
           router.push("/dashboard");
           router.refresh();
@@ -75,7 +71,7 @@ export default function AuthCallbackPage() {
     };
 
     handleOAuthCallback();
-  }, [searchParams, router]);
+  }, [router, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -116,5 +112,27 @@ export default function AuthCallbackPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+            <div className="w-16 h-16 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500"></div>
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">
+              Loading...
+            </h2>
+            <p className="text-gray-600">Please wait...</p>
+          </div>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
