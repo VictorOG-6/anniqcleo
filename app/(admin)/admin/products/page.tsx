@@ -152,7 +152,7 @@ const Products = () => {
             placeholder="Search products..."
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
-            className="pl-9"
+            className="pl-9 text-black"
           />
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -254,6 +254,7 @@ const Products = () => {
                           image_url: product.image_url,
                           price: product.price,
                           status: product.status,
+                          quantity: product.quantity,
                           variants: product.variants,
                         });
                         setIsEditMode(true);

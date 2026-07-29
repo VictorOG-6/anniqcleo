@@ -47,12 +47,21 @@ const CartItemRow = ({
         >
           {item.product.name}
         </Link>
+        {item.product.variant_name && (
+          <p
+            className={`text-secondary ${compact ? "text-[11px] mt-0.5" : "text-sm mt-1"}`}
+          >
+            {item.product.variant_name}
+          </p>
+        )}
         {!compact && item.product.category && (
           <p className="mt-1 text-xs capitalize text-secondary">
             {item.product.category}
           </p>
         )}
-        <p className={`text-secondary ${compact ? "text-xs" : "text-sm mt-2"}`}>
+        <p
+          className={`text-secondary ${compact ? "text-xs" : "text-sm"} ${item.product.variant_name || !compact ? "mt-2" : "mt-1"}`}
+        >
           {formatToNaira(item.price)}
         </p>
 
@@ -61,7 +70,9 @@ const CartItemRow = ({
             <button
               type="button"
               disabled={isMutating}
-              onClick={() => decrementItem(item.product_id)}
+              onClick={() =>
+                decrementItem(item.product_id, item.product_variant_id)
+              }
               className="disabled:opacity-50 cursor-pointer"
               aria-label={`Decrease ${item.product.name} quantity`}
             >
@@ -75,7 +86,9 @@ const CartItemRow = ({
             <button
               type="button"
               disabled={isMutating}
-              onClick={() => incrementItem(item.product_id)}
+              onClick={() =>
+                incrementItem(item.product_id, item.product_variant_id)
+              }
               className="disabled:opacity-50 cursor-pointer"
               aria-label={`Increase ${item.product.name} quantity`}
             >
@@ -86,7 +99,9 @@ const CartItemRow = ({
           <button
             type="button"
             disabled={isMutating}
-            onClick={() => removeItem(item.product_id)}
+            onClick={() =>
+              removeItem(item.product_id, item.product_variant_id)
+            }
             className="text-red-500 transition-colors hover:text-red-600 disabled:opacity-50 cursor-pointer"
             aria-label={`Remove ${item.product.name} from cart`}
           >
@@ -125,7 +140,11 @@ export default function CartItems({
   return (
     <div className={compact ? "space-y-4" : "space-y-5"}>
       {displayedItems.map((item) => (
-        <CartItemRow key={item.product_id} item={item} compact={compact} />
+        <CartItemRow
+          key={`${item.product_id}:${item.product_variant_id ?? ""}`}
+          item={item}
+          compact={compact}
+        />
       ))}
       {hiddenItemsCount > 0 && (
         <p className="text-center text-xs text-secondary">

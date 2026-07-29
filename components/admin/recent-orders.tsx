@@ -11,6 +11,7 @@ const statusStyles: Record<OrderStatus, string> = {
   confirmed: "bg-blue-50 text-blue-700 border-blue-200",
   processing: "bg-violet-50 text-violet-700 border-violet-200",
   cancelled: "bg-red-50 text-red-700 border-red-200",
+  refund_pending: "bg-amber-50 text-amber-700 border-amber-200",
   refunded: "bg-gray-50 text-gray-700 border-gray-200",
   completed: "bg-green-50 text-green-700 border-green-200",
   failed: "bg-red-50 text-red-700 border-red-200",
@@ -44,7 +45,7 @@ export default function RecentOrders() {
           >
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate text-black">
-                {order.user.name}
+                {order.user?.name}
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {order.public_id} ·{" "}

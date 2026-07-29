@@ -67,10 +67,10 @@ export default function Orders() {
       cell: ({ row }) => (
         <div className="flex flex-col gap-0.5">
           <Text size={"sm"} className="sm:text-sm text-center font-bold">
-            {row.original.user.name}
+            {row.original.user?.name}
           </Text>
           <Text size={"xs"} className="sm:text-sm text-center">
-            {row.original.user.email}
+            {row.original.user?.email}
           </Text>
         </div>
       ),

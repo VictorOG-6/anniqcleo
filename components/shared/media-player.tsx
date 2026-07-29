@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AiFillInstagram } from "react-icons/ai";
 import { FaXTwitter } from "react-icons/fa6";
 import { FaTiktok } from "react-icons/fa";
+import Link from "next/link";
 
 const VIDEO_SOURCES = [
   "/videos/video1.mp4",
@@ -66,16 +67,42 @@ const MediaPlayer = () => {
             preload="auto"
             onEnded={handleVideoEnded}
           />
-          <div className="flex items-center justify-center gap-3 p-2.5 text-white transition-all duration-300 ">
-            <FaXTwitter
-              size={20}
-              className="cursor-pointer hover:text-primary"
-            />
-            <AiFillInstagram
-              size={20}
-              className="cursor-pointer hover:text-primary"
-            />
-            <FaTiktok size={20} className="cursor-pointer hover:text-primary" />
+          <div className="flex items-center justify-center gap-3 p-2.5 text-white">
+            <Link
+              href="https://x.com/anniqcleo"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="X (Twitter)"
+            >
+              <FaXTwitter
+                size={20}
+                className="cursor-pointer hover:text-primary"
+              />
+            </Link>
+
+            <Link
+              href="https://instagram.com/anniqcleo"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
+              <AiFillInstagram
+                size={20}
+                className="cursor-pointer hover:text-primary"
+              />
+            </Link>
+
+            <Link
+              href="https://tiktok.com/@anniqcleo"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="TikTok"
+            >
+              <FaTiktok
+                size={20}
+                className="cursor-pointer hover:text-primary"
+              />
+            </Link>
           </div>
           <div
             className="absolute -top-2.5 -right-2.5 w-7 h-7 rounded-full flex items-center justify-center text-white cursor-pointer transition-all duration-300 bg-black hover:text-primary"

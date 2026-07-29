@@ -44,6 +44,7 @@ export interface CartItem {
   cart_id: string;
   cart: Cart;
   product_id: string;
+  product_variant_id?: string | null;
   product: Product;
   quantity: number;
   total_price: number;
@@ -76,8 +77,18 @@ export type OrderStatus =
   | "confirmed"
   | "cancelled"
   | "failed"
+  | "refund_pending"
   | "refunded"
   | "completed";
+
+export type PaymentStatus =
+  | "initialized"
+  | "pending"
+  | "success"
+  | "failed"
+  | "abandoned"
+  | "refund_pending"
+  | "refunded";
 
 export interface Order {
   id: string;
@@ -90,8 +101,26 @@ export interface Order {
   user_id: string;
   user: User;
   status: OrderStatus;
-  cancelled_at: string;
-  refunded_at: string;
+  confirmed_at: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  refunded_at: string | null;
+}
+
+export interface Payment {
+  id: string;
+  order_id: string;
+  reference: string;
+  amount_kobo: number;
+  currency: string;
+  status: PaymentStatus;
+  authorization_url: string | null;
+  paid_at: string | null;
+}
+
+export interface Checkout {
+  order: Order;
+  payment: Payment;
 }
 
 export type OrderCreate = Omit<
@@ -106,6 +135,8 @@ export type OrderCreate = Omit<
   | "user_id"
   | "user"
   | "status"
+  | "confirmed_at"
+  | "completed_at"
   | "cancelled_at"
   | "refunded_at"
 >;
@@ -161,6 +192,20 @@ export interface ReviewFetchProps {
 
 export type ProductStatus = "draft" | "published" | "archived";
 
+export interface ProductVariant {
+  id: string;
+  color: string;
+  name: string;
+  image_url: string;
+  quantity: number;
+  product_id: string;
+}
+
+export type ProductVariantInput = Pick<
+  ProductVariant,
+  "name" | "image_url" | "color" | "quantity"
+>;
+
 export interface Product {
   id: string;
   slug: string;
@@ -171,11 +216,12 @@ export interface Product {
   price: number;
   category: string;
   description: string;
-  variants?: string[];
+  variants?: ProductVariant[];
   reviews: Review[];
   total_reviews: number;
   average_rating: number;
   status: ProductStatus;
+  quantity: number;
 }
 
 export type ProductCreate = Omit<
@@ -187,7 +233,10 @@ export type ProductCreate = Omit<
   | "reviews"
   | "total_reviews"
   | "average_rating"
->;
+  | "variants"
+> & {
+  variants?: ProductVariantInput[];
+};
 
 type ProductEditableFields = Pick<
   Product,
@@ -197,10 +246,28 @@ type ProductEditableFields = Pick<
   | "category"
   | "description"
   | "status"
+  | "quantity"
   | "variants"
 >;
 
-export type ProductUpdate = Partial<ProductEditableFields> & {
+export type ProductUpdate = Omit<Partial<ProductEditableFields>, "variants"> & {
+  id: string;
+  variants?: ProductVariantInput[];
+};
+
+export type ProductEditFormData = Partial<
+  Pick<
+    Product,
+    | "name"
+    | "image_url"
+    | "price"
+    | "category"
+    | "description"
+    | "status"
+    | "quantity"
+    | "variants"
+  >
+> & {
   id: string;
 };
 

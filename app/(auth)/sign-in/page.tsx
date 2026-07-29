@@ -1,20 +1,21 @@
 "use client";
 
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import type { AuthPayload } from "@/lib/auth";
 import { getAuthPayload, storeAuthToken, validateToken } from "@/lib/auth";
 import { API_URL } from "@/lib/constants";
 import processError from "@/lib/error";
 import { $http, addAccessTokenToHttpInstance } from "@/lib/http";
+import { userKeys } from "@/lib/react-query/query-keys";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -59,14 +60,11 @@ const SLIDE_INTERVAL_MS = 5500;
 
 const SignIn = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleAuthLoading, setIsGoogleAuthLoading] =
     useState<boolean>(false);
-  const [error, setError] = useState<string>("");
-  const [isValidSubmit, setIsValidSubmit] = useState<boolean>(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const form = useForm<SignInFormField>({
     resolver: zodResolver(signInSchema),
@@ -79,7 +77,6 @@ const SignIn = () => {
 
   const onSubmit: SubmitHandler<SignInFormField> = async (values) => {
     setIsLoading(true);
-    setError("");
 
     try {
       // Call FastAPI backend
@@ -102,12 +99,15 @@ const SignIn = () => {
         }),
       );
 
-      const defaultRedirect = ADMIN_ROLES.has(authPayload.user.role)
+      await queryClient.refetchQueries({
+        queryKey: userKeys.me,
+        type: "active",
+      });
+
+      const destination = ADMIN_ROLES.has(authPayload.user.role)
         ? "/admin"
         : "/";
-
-      router.push(defaultRedirect);
-      router.refresh();
+      router.replace(destination);
     } catch (error) {
       console.error("Sign in error:", error);
       if (error instanceof AxiosError) {
@@ -125,14 +125,6 @@ const SignIn = () => {
     window.location.href = `${API_URL}/auth/google`;
   };
 
-  useEffect(() => {
-    if (!form.formState.isValid) {
-      setIsValidSubmit(false);
-    } else {
-      setIsValidSubmit(true);
-    }
-  }, [form.formState.isValid]);
-
   const [slideIndex, setSlideIndex] = useState(0);
 
   useEffect(() => {
@@ -144,12 +136,12 @@ const SignIn = () => {
 
   const slide = SLIDES[slideIndex];
 
-  const handleFormError = (errors: any) => {
+  const handleFormError = (errors: FieldErrors<SignInFormField>) => {
     console.log("Form validation errors:", errors);
     // Show first error to user
-    const firstErrorKey = Object.keys(errors)[0];
-    if (firstErrorKey && errors[firstErrorKey]?.message) {
-      toast.error(errors[firstErrorKey].message);
+    const firstError = Object.values(errors)[0];
+    if (typeof firstError?.message === "string") {
+      toast.error(firstError.message);
     }
   };
 
@@ -163,7 +155,7 @@ const SignIn = () => {
           <div className="text-[#333333]">
             <h1 className="text-2xl mb-1 text-primary">Sign In</h1>
             <p className="font-normal mb-4">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href={"/sign-up"}
                 className="underline font-medium text-primary"
@@ -227,8 +219,8 @@ const SignIn = () => {
               </FieldGroup>
               <button
                 type="submit"
-                disabled={isLoading || !isValidSubmit}
-                className={`rounded-3xl ${isValidSubmit ? "bg-primary" : "bg-[#11111125]"} text-white text-base flex items-center justify-center w-full py-5 mt-8 ${isValidSubmit ? "cursor-pointer" : "cursor-not-allowed"}`}
+                disabled={isLoading || !form.formState.isValid}
+                className={`rounded-3xl ${form.formState.isValid ? "bg-primary" : "bg-[#11111125]"} text-white text-base flex items-center justify-center w-full py-5 mt-8 ${form.formState.isValid ? "cursor-pointer" : "cursor-not-allowed"}`}
               >
                 {isLoading ? "Signing in..." : "Sign in to your account"}
               </button>
@@ -240,7 +232,7 @@ const SignIn = () => {
             </div>
             <div className="flex justify-center mt-4">
               <button
-                // onClick={signInWithGoogle}
+                onClick={signInWithGoogle}
                 disabled={isGoogleAuthLoading || isLoading}
                 className="w-62.5 flex items-center justify-center gap-4 border border-[#333333] rounded-3xl text-[#333333] text-sm py-3 cursor-pointer"
               >

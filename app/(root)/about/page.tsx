@@ -1,5 +1,5 @@
 import { heroContent } from "@/constants/data";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Beaker, FlaskConical, Heart, Leaf } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import { AiFillInstagram } from "react-icons/ai";
@@ -57,19 +57,39 @@ const About = () => {
           </h1>
         </div>
       </section>
-      <section className="max-w-7xl mx-auto flex flex-col gap-8 items-center py-20 px-5 md:px-10">
-        <h1 className="text-primary text-center text-sm md:text-3xl">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-20">
+        <h2 className="font-display text-3xl font-bold text-center text-primary mb-12">
           How we do things, the Anniqcleo way
-        </h1>
-        <div className="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 items-center gap-y-7 lg:gap-y-0 text-secondary text-sm md:text-xl font-bold text-center">
-          {heroContent.map((item, index) => (
-            <div key={index} className="flex flex-col gap-3 items-center">
-              <img
-                src={`/images/icon${index + 1}.png`}
-                alt={item}
-                className="w-33.75 h-30 md:w-37.75 md:h-33.75"
-              />
-              <p className="max-w-55.75">{item}</p>
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            {
+              icon: Leaf,
+              title: "Made with Herbs + Actives",
+              desc: "Natural ingredients that actually work",
+            },
+            {
+              icon: FlaskConical,
+              title: "Small Batch Fresh",
+              desc: "Freshly made in small batches",
+            },
+            {
+              icon: Heart,
+              title: "Vegan + Cruelty-free",
+              desc: "Always vegan, never tested on animals",
+            },
+            {
+              icon: Beaker,
+              title: "Formulated by Us",
+              desc: "Perfected for you",
+            },
+          ].map((f, i) => (
+            <div key={i} className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <f.icon className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-sm mb-2">{f.title}</h3>
+              <p className="text-xs text-neutral-500">{f.desc}</p>
             </div>
           ))}
         </div>

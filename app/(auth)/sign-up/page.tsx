@@ -3,8 +3,8 @@
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import Image from "next/image";
 import Link from "next/link";
-import React, { Suspense, useEffect, useState } from "react";
-import { SubmitHandler, useForm } from "react-hook-form";
+import React, { useEffect, useState } from "react";
+import { FieldErrors, SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import z from "zod";
 import { Check, Eye, EyeOff, X } from "lucide-react";
@@ -13,10 +13,11 @@ import { $http, addAccessTokenToHttpInstance } from "@/lib/http";
 import type { AuthPayload } from "@/lib/auth";
 import { getAuthPayload, storeAuthToken, validateToken } from "@/lib/auth";
 import { useRouter } from "next/navigation";
-import { useSearchParams } from "next/navigation";
 import processError from "@/lib/error";
 import { API_URL } from "@/lib/constants";
 import { toast } from "sonner";
+import { userKeys } from "@/lib/react-query/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 
 const signUpSchema = z
   .object({
@@ -54,6 +55,8 @@ type SignUpFormField = z.infer<typeof signUpSchema>;
 
 type SignUpResponse = AuthPayload | { data?: AuthPayload };
 
+const ADMIN_ROLES = new Set(["admin", "staff"]);
+
 const SLIDES = [
   {
     tagline:
@@ -77,15 +80,14 @@ const SLIDES = [
 
 const SLIDE_INTERVAL_MS = 5500;
 
-const SignUpContent = () => {
+const SignUp = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
   const [showPasswordValidation, setShowPasswordValidation] =
     useState<boolean>(false);
-  const [isValidSubmit, setIsValidSubmit] = useState<boolean>(false);
   const [acceptTerms, setAcceptTerms] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleAuthLoading, setIsGoogleAuthLoading] =
@@ -144,9 +146,10 @@ const SignUpContent = () => {
   ];
 
   const passwordsMatch =
-    watchPassword && watchConfirmPassword === watchConfirmPassword;
+    watchConfirmPassword && watchPassword === watchConfirmPassword;
   const passwordsDontMatch =
-    watchPassword && watchConfirmPassword !== watchConfirmPassword;
+    watchConfirmPassword && watchPassword !== watchConfirmPassword;
+  const isValidSubmit = form.formState.isValid && acceptTerms;
 
   const onSubmit: SubmitHandler<SignUpFormField> = async (values) => {
     setIsLoading(true);
@@ -170,9 +173,15 @@ const SignUpContent = () => {
         }),
       );
 
-      const redirectUri = searchParams.get("redirectUri");
-      router.push(redirectUri || "/");
-      router.refresh();
+      await queryClient.refetchQueries({
+        queryKey: userKeys.me,
+        type: "active",
+      });
+
+      const destination = ADMIN_ROLES.has(authPayload.user.role)
+        ? "/admin"
+        : "/";
+      router.replace(destination);
     } catch (error) {
       console.error("Sign in error:", error);
       if (error instanceof AxiosError) {
@@ -190,14 +199,6 @@ const SignUpContent = () => {
     window.location.href = `${API_URL}/auth/google`;
   };
 
-  useEffect(() => {
-    if (!form.formState.isValid || !acceptTerms) {
-      setIsValidSubmit(false);
-    } else {
-      setIsValidSubmit(true);
-    }
-  }, [acceptTerms, form.formState.isValid]);
-
   const [slideIndex, setSlideIndex] = useState(0);
 
   useEffect(() => {
@@ -209,12 +210,12 @@ const SignUpContent = () => {
 
   const slide = SLIDES[slideIndex];
 
-  const handleFormError = (errors: any) => {
+  const handleFormError = (errors: FieldErrors<SignUpFormField>) => {
     console.log("Form validation errors:", errors);
     // Show first error to user
-    const firstErrorKey = Object.keys(errors)[0];
-    if (firstErrorKey && errors[firstErrorKey]?.message) {
-      toast.error(errors[firstErrorKey].message);
+    const firstError = Object.values(errors)[0];
+    if (typeof firstError?.message === "string") {
+      toast.error(firstError.message);
     }
   };
 
@@ -365,7 +366,7 @@ const SignUpContent = () => {
                       <div className="flex items-center gap-2 mt-2">
                         <X size={14} color="text-red-500" />
                         <p className="text-sm text-red-500">
-                          Passwords don't match
+                          Passwords don&apos;t match
                         </p>
                       </div>
                     )}
@@ -403,7 +404,7 @@ const SignUpContent = () => {
               </div>
               <button
                 type="submit"
-                disabled={isValidSubmit ? false : true}
+                disabled={isLoading || !isValidSubmit}
                 className={`rounded-3xl ${isValidSubmit ? "bg-primary" : "bg-[#11111125]"} text-white text-base flex items-center justify-center w-full py-5 mt-8 ${isValidSubmit ? "cursor-pointer" : "cursor-not-allowed"}`}
               >
                 {isLoading ? "Creating..." : "Create an account"}
@@ -478,16 +479,4 @@ const SignUpContent = () => {
   );
 };
 
-export default function SignUp() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="h-12 w-12 animate-spin rounded-full border-b-4 border-primary" />
-        </div>
-      }
-    >
-      <SignUpContent />
-    </Suspense>
-  );
-}
+export default SignUp;

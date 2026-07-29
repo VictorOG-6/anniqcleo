@@ -4,7 +4,7 @@ import { StarRating } from "@/components/shared/star-rating";
 import { useCart } from "@/contexts/cart/cart-context";
 import { useFetchProduct } from "@/hooks/product/use-fetch-products";
 import { formatToNaira } from "@/lib/utils";
-import { ArrowLeft, Minus, Plus, ShoppingBasket, Star } from "lucide-react";
+import { ArrowLeft, Minus, Plus, ShoppingBasket } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -15,15 +15,21 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1);
   const { data: product, isLoading, isError } = useFetchProduct(id);
   const { addItem, isMutating } = useCart();
-
-  const rating = product?.average_rating
-    ? Math.max(1, Math.min(5, Math.round(product.average_rating)))
-    : 5;
+  const variants = product?.variants ?? [];
+  const [selectedVariantId, setSelectedVariantId] = useState<
+    string | undefined
+  >(undefined);
+  const selectedVariant =
+    variants.find((variant) => variant.id === selectedVariantId) ?? variants[0];
+  const displayedImage =
+    selectedVariant?.image_url ||
+    product?.image_url ||
+    "/images/featured1.avif";
 
   const handleAddToCart = () => {
     if (!product) return;
 
-    addItem(product, quantity);
+    addItem(product, quantity, selectedVariant?.id);
     toast.success("Product added to cart");
   };
 
@@ -81,8 +87,8 @@ export default function ProductDetailPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
           <div className="bg-foreground rounded-[40px] overflow-hidden">
             <img
-              src={product.image_url || "/images/featured1.avif"}
-              alt={product.name}
+              src={displayedImage}
+              alt={selectedVariant?.name || product.name}
               className="w-full h-100 md:h-150 object-cover"
             />
           </div>
@@ -95,13 +101,23 @@ export default function ProductDetailPage() {
               <h1 className="font-roboto-mono text-2xl md:text-5xl text-primary">
                 {product.name}
               </h1>
-              <div className="flex items-center gap-3">
-                <StarRating rating={product.average_rating} />
-                <span className="text-sm">
-                  ({product.total_reviews ?? product.reviews?.length ?? 0}{" "}
-                  reviews)
+              {selectedVariant && (
+                <span className="text-sm text-secondary">
+                  {selectedVariant.name}
                 </span>
-              </div>
+              )}
+              {product.average_rating !== 0 && (
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/images/5star.png"
+                    alt={`${product.average_rating} Stars`}
+                    className="w-16 h-4 md:w-25 md:h-5"
+                  />
+                  <span className="text-sm">
+                    ({product.total_reviews} reviews)
+                  </span>
+                </div>
+              )}
             </div>
 
             <p className="text-xl md:text-3xl font-semibold text-primary">
@@ -112,18 +128,35 @@ export default function ProductDetailPage() {
               {product.description}
             </p>
 
-            {product.variants && product.variants.length > 0 && (
+            {variants.length > 0 && (
               <div className="flex flex-col gap-3">
-                <h2 className="font-roboto-mono text-primary">Variants</h2>
-                <div className="flex flex-wrap gap-2">
-                  {product.variants.map((variant) => (
-                    <span
-                      key={variant}
-                      className="rounded-2xl bg-foreground px-4 py-2 text-sm"
-                    >
-                      {variant}
-                    </span>
-                  ))}
+                <div className="flex items-center justify-between gap-4">
+                  <h2 className="font-roboto-mono text-primary">Color</h2>
+                </div>
+                <div
+                  className="flex flex-wrap gap-3"
+                  aria-label={`Choose a ${product.name} color`}
+                >
+                  {variants.map((variant) => {
+                    const isSelected = variant.id === selectedVariant?.id;
+
+                    return (
+                      <button
+                        key={variant.id}
+                        type="button"
+                        onClick={() => setSelectedVariantId(variant.id)}
+                        title={variant.name}
+                        aria-label={`Select ${variant.name}`}
+                        aria-pressed={isSelected}
+                        className={`h-8 w-8 rounded-full border-2 transition-transform hover:scale-110 cursor-pointer ${
+                          isSelected
+                            ? "border-primary ring-2 ring-primary/30 ring-offset-2"
+                            : "border-gray-300"
+                        }`}
+                        style={{ backgroundColor: variant.color }}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -179,14 +212,8 @@ export default function ProductDetailPage() {
                   key={review.id}
                   className="rounded-2xl bg-foreground p-5 text-secondary"
                 >
-                  <div className="flex items-center gap-1 text-primary mb-3">
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <Star
-                        key={index}
-                        size={14}
-                        fill={index < review.rating ? "currentColor" : "none"}
-                      />
-                    ))}
+                  <div className="mb-3">
+                    <StarRating rating={review.rating} size={14} />
                   </div>
                   <p className="text-sm leading-6">{review.comment}</p>
                   {review.user?.name && (

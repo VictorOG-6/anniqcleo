@@ -56,6 +56,12 @@ export const orderKeys = {
   metrics: () => [...orderKeys.all, "metrics"] as const,
 };
 
+export const paymentKeys = {
+  all: ["payment"] as const,
+  verification: (reference: string) =>
+    [...paymentKeys.all, "verification", reference] as const,
+};
+
 export const dashboardKeys = {
   all: ["dashboard"] as const,
   lists: () => [...dashboardKeys.all, "list"] as const,

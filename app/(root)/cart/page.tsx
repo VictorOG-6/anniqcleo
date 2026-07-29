@@ -3,7 +3,10 @@
 import CartItems from "@/components/shared/cart-items";
 import { useCart } from "@/contexts/cart/cart-context";
 import { useCreateOrder } from "@/hooks/order/use-create-order";
+import processError from "@/lib/error";
+import { redirectToPaystack } from "@/lib/paystack";
 import { formatToNaira } from "@/lib/utils";
+import { AxiosError } from "axios";
 import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -30,13 +33,25 @@ export default function CartPage() {
     }
 
     createOrder(undefined, {
-      onSuccess: (order) => {
+      onSuccess: ({ order, payment }) => {
         clearLocalCart();
-        toast.success("Order created successfully");
-        router.push(`/orders/${order.id}`);
+
+        try {
+          redirectToPaystack(payment.authorization_url);
+        } catch {
+          toast.error(
+            "Your order was created, but payment could not be opened. You can retry from the order page.",
+          );
+          router.push(`/orders/${order.id}`);
+        }
       },
-      onError: () => {
-        toast.error("Unable to create order. Please try again.");
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          processError(error);
+          return;
+        }
+
+        toast.error("Unable to create your order. Please try again.");
       },
     });
   };
@@ -103,7 +118,7 @@ export default function CartPage() {
               className="w-full bg-primary flex items-center justify-center gap-2.5 py-3 px-8 text-white font-semibold rounded-2xl shadow-md cursor-pointer transition-all duration-300 hover:bg-primary/80 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isCreatingOrder && <Loader2 className="h-4 w-4 animate-spin" />}
-              Checkout
+              Pay securely with Paystack
             </button>
 
             {items.length > 0 && (

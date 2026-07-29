@@ -7,9 +7,10 @@ import { AiFillInstagram } from "react-icons/ai";
 import { FaTiktok } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 import Link from "next/link";
+import { FORM_API } from "@/lib/constants";
 
 const Contact = () => {
-  const [state, handleSubmit] = useForm("xqkowery");
+  const [state, handleSubmit] = useForm(FORM_API);
 
   return (
     <main className="pt-20 md:pt-28">
@@ -119,6 +120,7 @@ const Contact = () => {
                 <label htmlFor="message">Message</label>
                 <textarea
                   id="message"
+                  name="message"
                   className="w-full md:h-25 px-3 py-2 rounded-2xl border border-[#8E8E93]"
                 />
                 <ValidationError

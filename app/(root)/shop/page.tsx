@@ -5,13 +5,35 @@ import useFetchProducts from "@/hooks/product/use-fetch-products";
 import useFetchProductCategoriesSummary from "@/hooks/product/use-fetch-product-categories-summary";
 import { Product, ProductCategoriesSummary } from "@/types";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
-import React, { useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 
-const Shop = () => {
-  const [activeCategory, setActiveCategory] = useState<string>("All");
+const ShopContent = () => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeCategory = searchParams.get("categories") ?? "All";
+
   const [search, setSearch] = useState<string>("");
   const [page, setPage] = useState<number>(1);
   const pageSize = 8;
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeCategory]);
+
+  const updateCategory = (category: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (category === "All") {
+      params.delete("categories");
+    } else {
+      params.set("categories", category);
+    }
+
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   const { data: categories = [] } = useFetchProductCategoriesSummary({
     status: "published",
@@ -67,10 +89,7 @@ const Shop = () => {
               <div
                 key={category}
                 className={`flex items-center font-roboto-mono justify-center py-1 px-2 md:px-3.5 cursor-pointer rounded-2xl text-secondary transition-all duration-300 hover:bg-primary hover:text-white ${activeCategory === category ? "bg-primary text-white" : "text-secondary bg-foreground"}`}
-                onClick={() => {
-                  setActiveCategory(category);
-                  setPage(1);
-                }}
+                onClick={() => updateCategory(category)}
               >
                 <p className="text-sm md:text-base">{category}</p>
               </div>
@@ -110,15 +129,7 @@ const Shop = () => {
         ) : (
           <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-7">
             {products.map((product: Product) => (
-              <ProductCard
-                key={product.id}
-                name={product.name}
-                image={product.image_url}
-                price={product.price}
-                reviews={product.total_reviews ?? product.reviews?.length}
-                stars={Math.round(product.average_rating)}
-                href={`/products/${product.id}`}
-              />
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         )}
@@ -153,5 +164,28 @@ const Shop = () => {
     </main>
   );
 };
+
+const Shop = () => (
+  <Suspense
+    fallback={
+      <main className="pt-20 md:pt-28">
+        <section className="bg-foreground py-20">
+          <div className="max-w-7xl mx-auto px-5 md:px-0">
+            <div className="flex flex-col items-center text-center gap-2.5 md:gap-7">
+              <h1 className="text-primary text-sm md:text-3xl font-roboto-mono">
+                Anniqcleo Collection
+              </h1>
+              <p className="w-50 md:w-fit text-center text-secondary text-xs md:text-xl">
+                Shop our complete range of botanical powered skincare essentials.
+              </p>
+            </div>
+          </div>
+        </section>
+      </main>
+    }
+  >
+    <ShopContent />
+  </Suspense>
+);
 
 export default Shop;

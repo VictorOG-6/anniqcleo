@@ -2,13 +2,13 @@
 
 import {
   Camera,
-  CircleUserRound,
+  LayoutDashboard,
   LogOut,
   Menu,
-  Search,
   ShoppingBasket,
   X,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
@@ -20,12 +20,16 @@ import { formatToNaira } from "@/lib/utils";
 import { useUserContext } from "@/contexts/user/user-context";
 import { useLogout } from "@/hooks/auth/useLogout";
 import ProfilePictureModal from "./profile-picture-modal";
+import type { UserRole } from "@/types";
 
 const navLinks = [
   { name: "Shop", href: "/shop" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
+  { name: "Shade Finder", href: "/shade-finder" },
 ];
+
+const ADMIN_ROLES = new Set<UserRole>(["admin", "staff"]);
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -39,6 +43,7 @@ const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState<number>(0);
   const [scrolledUp, setScrolledUp] = useState<boolean>(false);
   const isActive = (href: string) => pathname === href;
+  const canAccessAdmin = user ? ADMIN_ROLES.has(user.role) : false;
 
   const handleProfilePictureModalClose = () => {
     setIsProfilePictureModalOpen(false);
@@ -87,7 +92,17 @@ const Navbar = () => {
       } ${scrolledUp ? "bg-white shadow-md py-4" : "bg-white lg:bg-transparent py-6"}`}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between text-base text-black px-4 md:px-0">
-        <nav className="hidden md:flex items-center gap-12 font-inter">
+        <Link href={"/"} className="cursor-pointer">
+          <Image
+            src={"/logo.png"}
+            alt="Anniqcleo Logo"
+            width={200}
+            height={56}
+            className="w-45 h-10 md:w-50 md:h-14 object-cover"
+          />
+        </Link>
+
+        <nav className="hidden lg:flex items-center gap-12 font-inter">
           {navLinks.map((link) => (
             <Link
               href={link.href}
@@ -101,19 +116,23 @@ const Navbar = () => {
           ))}
         </nav>
 
-        <Link href={"/"} className="cursor-pointer">
-          <img
-            src={"/logo.png"}
-            alt="Anniqcleo Logo"
-            className="w-45 h-10 md:w-50 md:h-14 object-cover"
-          />
-        </Link>
-
         <div className="flex items-center gap-5 md:gap-8 text-black">
-          <Search
+          {/* <Search
             size={24}
             className="cursor-pointer transition-colors duration-300 hover:text-primary"
-          />
+          /> */}
+          {canAccessAdmin && (
+            <Link
+              href="/admin"
+              aria-label="Open admin dashboard"
+              className={`flex items-center gap-2 transition-colors duration-300 hover:text-primary ${
+                pathname.startsWith("/admin") ? "text-primary" : "text-black"
+              }`}
+            >
+              <span className="hidden xl:inline">Admin</span>
+            </Link>
+          )}
+
           <Popover>
             <PopoverTrigger className="relative">
               <ShoppingBasket
@@ -191,7 +210,7 @@ const Navbar = () => {
                       onClick={() => setIsProfilePictureModalOpen(true)}
                       aria-label="Edit profile picture"
                     >
-                      <Camera size={14} />
+                      <Camera size={14} color="#0000FF" />
                     </div>
                   </div>
                   <div className="flex flex-col items-center gap-0.5 mt-2">
@@ -265,14 +284,9 @@ const Navbar = () => {
                 onClick={() => setIsProfilePictureModalOpen(true)}
                 aria-label="Edit profile picture"
               >
-                <Camera size={14} />
+                <Camera size={14} color="#0000FF" />
               </div>
             </div>
-            <UserAvatar
-              name={user.name}
-              seed={user.email}
-              src={user.profile_image_url}
-            />
             <h2 className="text-sm text-black font-medium">
               Hi! {user.name.split(" ")[0]}
             </h2>
@@ -281,6 +295,17 @@ const Navbar = () => {
         )}
 
         <nav className="w-full flex flex-col">
+          {canAccessAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setIsOpen(false)}
+              className={`flex items-center gap-2 px-6 py-3 border-b border-[#8E8E93] font-inter text-sm hover:text-primary transition-colors ${
+                pathname.startsWith("/admin") ? "text-primary" : "text-black"
+              }`}
+            >
+              Admin
+            </Link>
+          )}
           {navLinks.map((link) => (
             <Link
               key={link.href}

@@ -3,9 +3,19 @@
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
 import { useCancelOrder } from "@/hooks/order/use-cancel-order";
 import { useFetchOrder } from "@/hooks/order/use-fetch-order";
+import { useInitializePayment } from "@/hooks/payment/use-initialize-payment";
+import processError from "@/lib/error";
+import { redirectToPaystack } from "@/lib/paystack";
 import { formatToNaira } from "@/lib/utils";
+import { AxiosError } from "axios";
 import { format } from "date-fns";
-import { ArrowLeft, Loader2, Package, XCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  CreditCard,
+  Loader2,
+  Package,
+  XCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -15,9 +25,14 @@ export default function OrderDetailPage() {
   const { data: order, isLoading, isError } = useFetchOrder(id);
   const { mutate: cancelOrder, isPending: isCancellingOrder } =
     useCancelOrder();
+  const { mutate: initializePayment, isPending: isInitializingPayment } =
+    useInitializePayment();
 
   const canCancelOrder =
-    order?.status === "pending" || order?.status === "processing";
+    order?.status === "pending" ||
+    order?.status === "processing" ||
+    order?.status === "failed";
+  const canPay = canCancelOrder;
 
   const handleCancelOrder = () => {
     if (!order) return;
@@ -33,6 +48,30 @@ export default function OrderDetailPage() {
         },
       },
     );
+  };
+
+  const handlePayment = () => {
+    if (!order) return;
+
+    initializePayment(order.id, {
+      onSuccess: (payment) => {
+        try {
+          redirectToPaystack(payment.authorization_url);
+        } catch {
+          toast.error(
+            "Payment was initialized, but Paystack checkout could not be opened.",
+          );
+        }
+      },
+      onError: (error) => {
+        if (error instanceof AxiosError) {
+          processError(error);
+          return;
+        }
+
+        toast.error("Unable to start payment. Please try again.");
+      },
+    });
   };
 
   if (isLoading) {
@@ -101,21 +140,38 @@ export default function OrderDetailPage() {
 
             <div className="flex flex-col md:items-end gap-3">
               <OrderStatusBadge status={order.status} />
-              {canCancelOrder && (
-                <button
-                  type="button"
-                  disabled={isCancellingOrder}
-                  onClick={handleCancelOrder}
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
-                >
-                  {isCancellingOrder ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <XCircle size={16} />
-                  )}
-                  Cancel order
-                </button>
-              )}
+              <div className="flex flex-wrap justify-end gap-2">
+                {canPay && (
+                  <button
+                    type="button"
+                    disabled={isInitializingPayment || isCancellingOrder}
+                    onClick={handlePayment}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary/80 disabled:opacity-60"
+                  >
+                    {isInitializingPayment ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <CreditCard size={16} />
+                    )}
+                    Pay with Paystack
+                  </button>
+                )}
+                {canCancelOrder && (
+                  <button
+                    type="button"
+                    disabled={isCancellingOrder || isInitializingPayment}
+                    onClick={handleCancelOrder}
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-100 disabled:opacity-60"
+                  >
+                    {isCancellingOrder ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <XCircle size={16} />
+                    )}
+                    Cancel order
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 

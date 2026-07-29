@@ -1,6 +1,6 @@
 "use client";
 
-import { Pagination, Product, ProductStatus, ProductUpdate } from "@/types";
+import { Pagination, Product, ProductEditFormData, ProductStatus } from "@/types";
 import {
   createContext,
   Dispatch,
@@ -16,8 +16,8 @@ type ProductStatusFilter = ProductStatus | "all";
 type CreateProductContextType = {
   isOpen: boolean;
   setIsOpen: Dispatch<SetStateAction<boolean>>;
-  createProductData: ProductUpdate;
-  setCreateProductData: Dispatch<SetStateAction<ProductUpdate>>;
+  createProductData: ProductEditFormData;
+  setCreateProductData: Dispatch<SetStateAction<ProductEditFormData>>;
   isEditMode: boolean;
   setIsEditMode: Dispatch<SetStateAction<boolean>>;
   searchValue: string;
@@ -44,8 +44,8 @@ export const useCreateProductContext = () => {
 
 const CreateProductProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [createProductData, setCreateProductData] = useState<ProductUpdate>(
-    {} as ProductUpdate,
+  const [createProductData, setCreateProductData] = useState<ProductEditFormData>(
+    {} as ProductEditFormData,
   );
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [searchValue, setSearchValue] = useState<string>("");

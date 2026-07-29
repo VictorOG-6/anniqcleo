@@ -14,15 +14,21 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { X, Upload, Loader2 } from "lucide-react";
+import { X, Upload, Loader2, Plus } from "lucide-react";
 import { useCreateProductContext } from "@/contexts/product/create-product-context";
 import { useCreateProduct } from "@/hooks/product/use-create-product";
 import { useUpdateProduct } from "@/hooks/product/use-update-product";
-import { Controller, SubmitHandler, useForm } from "react-hook-form";
+import {
+  Controller,
+  FieldErrors,
+  SubmitHandler,
+  useFieldArray,
+  useForm,
+} from "react-hook-form";
 import z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { ProductCreate, ProductStatus } from "@/types";
+import { ProductCreate, ProductVariantInput } from "@/types";
 import { $http } from "@/lib/http";
 import { API_URL } from "@/lib/constants";
 
@@ -50,27 +56,34 @@ const createProductSchema = z.object({
   status: z.enum(["draft", "published", "archived"], {
     message: "Product status must be draft, published or archived",
   }),
-  variants: z.string().optional(),
+  quantity: z
+    .number({ invalid_type_error: "Quantity is required" })
+    .int("Quantity must be a whole number")
+    .nonnegative("Quantity cannot be negative"),
+  variants: z.array(
+    z.object({
+      name: z.string().min(1, "Variant name is required"),
+      color: z
+        .string()
+        .regex(/^#[0-9A-Fa-f]{6}$/, "Use a valid hex color, e.g. #AABBCC"),
+      image_url: z.string().min(1, "Variant image URL is required"),
+      quantity: z
+        .number({ invalid_type_error: "Quantity is required" })
+        .int("Quantity must be a whole number")
+        .nonnegative("Quantity cannot be negative"),
+    }),
+  ),
 });
 
 type CreateProductFormFields = z.infer<typeof createProductSchema>;
 
-const formatVariantsForInput = (variants?: string[] | string) => {
-  if (!variants) return "";
-  if (Array.isArray(variants)) return variants.join(", ");
-  return variants;
-};
-
-const parseVariants = (variants?: string) => {
-  if (!variants?.trim()) return undefined;
-
-  const parsed = variants
-    .split(",")
-    .map((variant) => variant.trim())
-    .filter(Boolean);
-
-  return parsed.length > 0 ? parsed : undefined;
-};
+const formatVariantsForForm = (variants?: ProductVariantInput[]) =>
+  variants?.map(({ name, color, image_url, quantity }) => ({
+    name,
+    color,
+    image_url,
+    quantity,
+  })) ?? [];
 
 const FieldError = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -101,12 +114,15 @@ const getImagePreviewSrc = (imageUrl: string) => {
 };
 
 export default function ProductModal() {
-  const { createProductData, setCreateProductData, isEditMode, setIsOpen } =
+  const { createProductData, isEditMode, setIsOpen } =
     useCreateProductContext();
   const FORM_STORAGE_KEY = "productDetailsForm";
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
   const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
   const [uploading, setUploading] = useState(false);
+  const [uploadingVariantIndex, setUploadingVariantIndex] = useState<
+    number | null
+  >(null);
 
   const form = useForm<CreateProductFormFields>({
     resolver: zodResolver(createProductSchema),
@@ -117,9 +133,15 @@ export default function ProductModal() {
       image_url: "",
       price: undefined,
       status: "draft",
-      variants: "",
+      quantity: 0,
+      variants: [],
     },
     mode: "onChange",
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "variants",
   });
 
   const {
@@ -135,7 +157,8 @@ export default function ProductModal() {
         image_url: createProductData.image_url ?? "",
         price: createProductData.price ?? undefined,
         status: createProductData.status ?? "draft",
-        variants: formatVariantsForInput(createProductData.variants),
+        quantity: createProductData.quantity ?? 0,
+        variants: formatVariantsForForm(createProductData.variants),
       });
     }
   }, [isEditMode, createProductData, form]);
@@ -154,7 +177,8 @@ export default function ProductModal() {
           image_url: parsed.image_url || "",
           price: parsed.price || 0,
           status: parsed.status || "draft",
-          variants: formatVariantsForInput(parsed.variants),
+          quantity: Number(parsed.quantity) || 0,
+          variants: formatVariantsForForm(parsed.variants),
         });
       } catch (error) {
         console.error("Failed to parse stored product data:", error);
@@ -178,6 +202,7 @@ export default function ProductModal() {
   }, [form, isEditMode]);
 
   const onSubmit: SubmitHandler<CreateProductFormFields> = async (values) => {
+    const variants = values.variants.length > 0 ? values.variants : undefined;
     const productPayload: ProductCreate = {
       name: values.name,
       description: values.description,
@@ -185,7 +210,10 @@ export default function ProductModal() {
       image_url: values.image_url,
       price: values.price,
       status: values.status,
-      variants: parseVariants(values.variants),
+      quantity: variants
+        ? variants.reduce((total, variant) => total + variant.quantity, 0)
+        : values.quantity,
+      variants,
     };
 
     if (isEditMode && createProductData?.id) {
@@ -223,12 +251,15 @@ export default function ProductModal() {
     localStorage.removeItem(FORM_STORAGE_KEY);
   };
 
-  const handleFormError = (errors: any) => {
+  const handleFormError = (errors: FieldErrors<CreateProductFormFields>) => {
     console.log("Form validation errors:", errors);
-    // Show first error to user
-    const firstErrorKey = Object.keys(errors)[0];
-    if (firstErrorKey && errors[firstErrorKey]?.message) {
-      toast.error(errors[firstErrorKey].message);
+    const firstError = Object.values(errors)[0];
+    if (
+      firstError &&
+      "message" in firstError &&
+      typeof firstError.message === "string"
+    ) {
+      toast.error(firstError.message);
     }
   };
 
@@ -277,8 +308,79 @@ export default function ProductModal() {
     }
   };
 
+  const handleVariantImageUpload = async (
+    event: ChangeEvent<HTMLInputElement>,
+    index: number,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast.error("Please upload a JPG, PNG, or WEBP image");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      toast.error("Image must be 5MB or smaller");
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setUploadingVariantIndex(index);
+
+      const formData = new FormData();
+      formData.append("purpose", "product");
+      formData.append("file", file);
+
+      const response = await $http.post<ImageUploadResponse>(
+        IMAGE_UPLOAD_ENDPOINT,
+        formData,
+      );
+
+      form.setValue(
+        `variants.${index}.image_url`,
+        getUploadedImageUrl(response.data),
+        {
+          shouldDirty: true,
+          shouldValidate: true,
+        },
+      );
+
+      toast.success("Variant image uploaded successfully");
+    } catch (error) {
+      console.error("Variant image upload failed:", error);
+      toast.error("Failed to upload variant image");
+    } finally {
+      setUploadingVariantIndex(null);
+      event.target.value = "";
+    }
+  };
+
   const imageUrl = form.watch("image_url");
-  const isSubmitDisabled = isCreating || isUpdating || uploading || !isValid;
+  const variants = form.watch("variants");
+  const hasVariants = variants.length > 0;
+  const variantQuantity = variants.reduce(
+    (total, variant) => total + (Number(variant.quantity) || 0),
+    0,
+  );
+
+  useEffect(() => {
+    if (!hasVariants) return;
+
+    form.setValue("quantity", variantQuantity, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+  }, [form, hasVariants, variantQuantity]);
+
+  const isSubmitDisabled =
+    isCreating ||
+    isUpdating ||
+    uploading ||
+    uploadingVariantIndex !== null ||
+    !isValid;
 
   return (
     <form
@@ -424,17 +526,157 @@ export default function ProductModal() {
           <FieldError message={errors.status?.message} />
         </div>
         <div className="space-y-2">
-          <Label>Variants</Label>
+          <Label>Quantity</Label>
           <Input
-            type="text"
-            {...form.register("variants")}
-            placeholder="e.g. Red, Blue, Green"
+            type="number"
+            min="0"
+            step="1"
+            {...form.register("quantity", {
+              valueAsNumber: true,
+              setValueAs: (value) =>
+                value === "" || value === null ? undefined : Number(value),
+            })}
+            placeholder="e.g. 100"
             autoComplete="off"
+            readOnly={hasVariants}
+            className={hasVariants ? "bg-muted" : undefined}
           />
-          <p className="text-xs text-muted-foreground">
-            Optional. Separate multiple variants with commas.
-          </p>
+          {hasVariants && (
+            <p className="text-xs text-muted-foreground">
+              Calculated from variant quantities.
+            </p>
+          )}
+          <FieldError message={errors.quantity?.message} />
         </div>
+      </div>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label>Product Variants</Label>
+          <button
+            type="button"
+            onClick={() =>
+              append({ name: "", color: "", image_url: "", quantity: 0 })
+            }
+            disabled={uploadingVariantIndex !== null}
+            className="flex items-center gap-1 text-sm text-black border border-gray-200 rounded-sm py-1 px-2"
+          >
+            <Plus size={12} />
+            Add Variant
+          </button>
+        </div>
+        {fields.map((field, index) => {
+          const variantImageUrl = variants[index]?.image_url;
+          const isUploadingThisVariant = uploadingVariantIndex === index;
+
+          return (
+            <div
+              key={field.id}
+              className="grid grid-cols-1 gap-3 rounded-lg border p-3 sm:grid-cols-2"
+            >
+            <div className="space-y-1">
+              <Label htmlFor={`variants.${index}.name`}>Name</Label>
+              <Input
+                id={`variants.${index}.name`}
+                {...form.register(`variants.${index}.name`)}
+                placeholder="e.g. Ruby Red"
+                autoComplete="off"
+              />
+              <FieldError message={errors.variants?.[index]?.name?.message} />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor={`variants.${index}.color`}>Color (hex)</Label>
+              <Input
+                id={`variants.${index}.color`}
+                {...form.register(`variants.${index}.color`)}
+                placeholder="#AABBCC"
+                autoComplete="off"
+              />
+              <FieldError message={errors.variants?.[index]?.color?.message} />
+            </div>
+            <div className="space-y-1">
+              <Label>Variant Image</Label>
+              {variantImageUrl ? (
+                <div className="relative h-24 w-24 overflow-hidden rounded-xl border">
+                  <img
+                    src={getImagePreviewSrc(variantImageUrl)}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      form.setValue(`variants.${index}.image_url`, "", {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      })
+                    }
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/50"
+                    aria-label={`Remove variant ${index + 1} image`}
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-border transition-colors hover:border-primary/50">
+                  {isUploadingThisVariant ? (
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  ) : (
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                  )}
+                  <span className="mt-1 text-[10px] text-muted-foreground">
+                    Upload
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) =>
+                      handleVariantImageUpload(event, index)
+                    }
+                    disabled={uploadingVariantIndex !== null}
+                    className="hidden"
+                  />
+                </label>
+              )}
+              <FieldError
+                message={errors.variants?.[index]?.image_url?.message}
+              />
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="flex-1 space-y-1">
+                <Label htmlFor={`variants.${index}.quantity`}>Quantity</Label>
+                <Input
+                  id={`variants.${index}.quantity`}
+                  type="number"
+                  min="0"
+                  step="1"
+                  {...form.register(`variants.${index}.quantity`, {
+                    valueAsNumber: true,
+                    setValueAs: (value) =>
+                      value === "" || value === null
+                        ? undefined
+                        : Number(value),
+                  })}
+                  placeholder="0"
+                />
+                <FieldError
+                  message={errors.variants?.[index]?.quantity?.message}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => remove(index)}
+                disabled={uploadingVariantIndex !== null}
+                aria-label={`Remove variant ${index + 1}`}
+                className="shrink-0 text-muted-foreground hover:text-red-500"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t">

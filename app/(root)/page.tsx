@@ -3,7 +3,7 @@ import MediaPlayer from "@/components/shared/media-player";
 import OtherProducts from "@/components/shared/other-products";
 import TextBanner from "@/components/shared/text-banner";
 import { heroContent } from "@/constants/data";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { FaInstagram, FaTiktok } from "react-icons/fa";
@@ -25,19 +25,28 @@ export default function Home() {
             ingredients, harnessing the gifts of the earth to create a radiant,
             healthy glow for your skin.
           </p>
-          <Link
-            href={"/shop"}
-            className="bg-primary flex items-center justify-center gap-2.5 py-2.5 md:py-4 px-7 text-sm md:text-xl text-white font-semibold rounded-2xl mt-2 shadow-md cursor-pointer transition-all duration-300 hover:bg-primary/70 hover:gap-3"
-          >
-            Explore Collection
-            <ArrowRight size={25} />
-          </Link>
+          <div className="w-full flex flex-col md:flex-row gap-2.5 mt-2">
+            <Link
+              href={"/shop"}
+              className="bg-primary flex items-center justify-center gap-1.5 py-1.5 md:py-2 px-4 text-sm md:text-base text-white font-semibold rounded-2xl shadow-md cursor-pointer transition-all duration-300 hover:bg-primary/70 hover:gap-2.5"
+            >
+              Explore Collection
+              <ArrowRight size={20} />
+            </Link>
+            <Link
+              href={"/shade-finder"}
+              className="bg-white flex items-center justify-center gap-1.5 py-1.5 md:py-2 px-4 text-sm md:text-base text-black font-semibold rounded-2xl border border-gray-200 shadow-md cursor-pointer transition-all duration-300 hover:bg-gray-200 hover:gap-2.5"
+            >
+              <Sparkles size={20} />
+              Find My Shade
+            </Link>
+          </div>
         </div>
         <Image
-          src="/images/hero-img.avif"
+          src="/images/hero-img2.avif"
           alt="Anniqcleo Products"
-          width={394}
-          height={378}
+          width={494}
+          height={478}
         />
         <img
           src={"/images/hero-bg.png"}
@@ -76,7 +85,7 @@ export default function Home() {
         <div className="flex flex-col items-center gap-8">
           <div className="flex flex-col md:flex-row items-center md:justify-between gap-8 md:gap-12">
             <Link
-              href={"/shop"}
+              href={"/shop?categories=Scrubs"}
               className="relative cursor-pointer overflow-hidden rounded-[40px]"
             >
               <img
@@ -95,7 +104,7 @@ export default function Home() {
               </div>
             </Link>
             <Link
-              href={"/shop"}
+              href={"/shop?categories=Lip+Kits"}
               className="relative cursor-pointer overflow-hidden rounded-[40px]"
             >
               <img
@@ -116,7 +125,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col md:flex-row items-center md:justify-between gap-8 md:gap-7">
             <Link
-              href={"/shop"}
+              href={"/shop?categories=Oils"}
               className="relative cursor-pointer overflow-hidden rounded-[40px] w-full md:w-fit"
             >
               <img
@@ -136,7 +145,7 @@ export default function Home() {
               </div>
             </Link>
             <Link
-              href={"/shop"}
+              href={"/shop?categories=Brow+Kits"}
               className="relative cursor-pointer overflow-hidden rounded-[40px] w-full md:w-fit"
             >
               <img

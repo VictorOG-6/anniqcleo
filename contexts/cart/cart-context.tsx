@@ -22,11 +22,14 @@ const CART_STORAGE_EVENT = "anniqcleo-cart-updated";
 export type LocalCartProduct = Pick<
   Product,
   "id" | "name" | "image_url" | "price" | "category" | "description"
->;
+> & {
+  variant_name?: string;
+};
 
 export interface LocalCartItem {
   id?: string;
   product_id: string;
+  product_variant_id?: string;
   product: LocalCartProduct;
   quantity: number;
   price: number;
@@ -38,10 +41,14 @@ interface CartContextValue {
   totalPrice: number;
   isLoading: boolean;
   isMutating: boolean;
-  addItem: (product: Product, quantity?: number) => void;
-  incrementItem: (productId: string) => void;
-  decrementItem: (productId: string) => void;
-  removeItem: (productId: string) => void;
+  addItem: (
+    product: Product,
+    quantity?: number,
+    productVariantId?: string,
+  ) => void;
+  incrementItem: (productId: string, productVariantId?: string) => void;
+  decrementItem: (productId: string, productVariantId?: string) => void;
+  removeItem: (productId: string, productVariantId?: string) => void;
   clearLocalCart: () => void;
   clearCart: () => void;
 }
@@ -53,6 +60,9 @@ let cachedCartString = "";
 let cachedCartItems: LocalCartItem[] = EMPTY_CART_ITEMS;
 
 const isBrowser = () => typeof window !== "undefined";
+
+const getCartItemKey = (productId: string, productVariantId?: string | null) =>
+  `${productId}:${productVariantId ?? ""}`;
 
 const sanitizeCartItem = (item: LocalCartItem): LocalCartItem => ({
   ...item,
@@ -126,14 +136,24 @@ const subscribeToAuthStorage = (onStoreChange: () => void) => {
   };
 };
 
-const toLocalProduct = (product: Product): LocalCartProduct => ({
-  id: product.id,
-  name: product.name,
-  image_url: product.image_url,
-  price: product.price,
-  category: product.category,
-  description: product.description,
-});
+const toLocalProduct = (
+  product: Product,
+  productVariantId?: string | null,
+): LocalCartProduct => {
+  const variant = product.variants?.find(
+    (productVariant) => productVariant.id === productVariantId,
+  );
+
+  return {
+    id: product.id,
+    name: product.name,
+    image_url: variant?.image_url || product.image_url,
+    price: product.price,
+    category: product.category,
+    description: product.description,
+    ...(variant?.name ? { variant_name: variant.name } : {}),
+  };
+};
 
 const toLocalCartItem = (item: CartItem): LocalCartItem | null => {
   if (!item.product && !item.product_id) return null;
@@ -145,8 +165,11 @@ const toLocalCartItem = (item: CartItem): LocalCartItem | null => {
   return {
     id: item.id,
     product_id: productId,
+    ...(item.product_variant_id
+      ? { product_variant_id: item.product_variant_id }
+      : {}),
     product: product
-      ? toLocalProduct(product)
+      ? toLocalProduct(product, item.product_variant_id)
       : {
           id: productId,
           name: "Product",
@@ -200,14 +223,20 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     if (!localItem) return;
 
     updateStoredCartItems((currentItems) => {
+      const localItemKey = getCartItemKey(
+        localItem.product_id,
+        localItem.product_variant_id,
+      );
       const existingItem = currentItems.find(
-        (item) => item.product_id === localItem.product_id,
+        (item) =>
+          getCartItemKey(item.product_id, item.product_variant_id) ===
+          localItemKey,
       );
 
       if (!existingItem) return [...currentItems, localItem];
 
       return currentItems.map((item) =>
-        item.product_id === localItem.product_id
+        getCartItemKey(item.product_id, item.product_variant_id) === localItemKey
           ? {
               ...localItem,
               quantity: existingItem.quantity,
@@ -219,14 +248,21 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   const syncCreateToServer = useCallback(
     (item: LocalCartItem) => {
-      if (!hasAccessToken || pendingServerCreates.current.has(item.product_id)) {
+      const itemKey = getCartItemKey(
+        item.product_id,
+        item.product_variant_id,
+      );
+      if (!hasAccessToken || pendingServerCreates.current.has(itemKey)) {
         return;
       }
 
-      pendingServerCreates.current.add(item.product_id);
+      pendingServerCreates.current.add(itemKey);
       createServerCartItem(
         {
           product_id: item.product_id,
+          ...(item.product_variant_id
+            ? { product_variant_id: item.product_variant_id }
+            : {}),
           quantity: item.quantity,
         },
         {
@@ -235,7 +271,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
             toast.error("Cart saved locally. Sign in again to sync it.");
           },
           onSettled: () => {
-            pendingServerCreates.current.delete(item.product_id);
+            pendingServerCreates.current.delete(itemKey);
           },
         },
       );
@@ -275,21 +311,28 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     if (serverItems.length === 0) return;
 
     updateStoredCartItems((currentItems) => {
-      const mergedItemsByProductId = new Map<string, LocalCartItem>();
+      const mergedItemsByKey = new Map<string, LocalCartItem>();
 
       serverItems.forEach((item) => {
-        mergedItemsByProductId.set(item.product_id, item);
+        mergedItemsByKey.set(
+          getCartItemKey(item.product_id, item.product_variant_id),
+          item,
+        );
       });
 
       currentItems.forEach((item) => {
-        const serverItem = mergedItemsByProductId.get(item.product_id);
-        mergedItemsByProductId.set(item.product_id, {
+        const itemKey = getCartItemKey(
+          item.product_id,
+          item.product_variant_id,
+        );
+        const serverItem = mergedItemsByKey.get(itemKey);
+        mergedItemsByKey.set(itemKey, {
           ...(serverItem ?? item),
           quantity: item.quantity,
         });
       });
 
-      return Array.from(mergedItemsByProductId.values());
+      return Array.from(mergedItemsByKey.values());
     });
   }, [serverCart]);
 
@@ -304,14 +347,20 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   }, [hasAccessToken, items, syncCreateToServer]);
 
   const addItem = useCallback(
-    (product: Product, quantity = 1) => {
+    (
+      product: Product,
+      quantity = 1,
+      productVariantId = product.variants?.[0]?.id,
+    ) => {
       const safeQuantity = Math.max(1, quantity);
-      const localProduct = toLocalProduct(product);
+      const localProduct = toLocalProduct(product, productVariantId);
+      const itemKey = getCartItemKey(product.id, productVariantId);
       let nextItem: LocalCartItem | undefined;
 
       updateStoredCartItems((currentItems) => {
         const existingItem = currentItems.find(
-          (item) => item.product_id === product.id,
+          (item) =>
+            getCartItemKey(item.product_id, item.product_variant_id) === itemKey,
         );
 
         if (existingItem) {
@@ -323,12 +372,17 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           };
 
           return currentItems.map((item) =>
-            item.product_id === product.id ? nextItem! : item,
+            getCartItemKey(item.product_id, item.product_variant_id) === itemKey
+              ? nextItem!
+              : item,
           );
         }
 
         nextItem = {
           product_id: product.id,
+          ...(productVariantId
+            ? { product_variant_id: productVariantId }
+            : {}),
           product: localProduct,
           quantity: safeQuantity,
           price: product.price,
@@ -349,16 +403,18 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const incrementItem = useCallback(
-    (productId: string) => {
+    (productId: string, productVariantId?: string) => {
+      const itemKey = getCartItemKey(productId, productVariantId);
       const existingItem = readStoredCartItems().find(
-        (item) => item.product_id === productId,
+        (item) =>
+          getCartItemKey(item.product_id, item.product_variant_id) === itemKey,
       );
       if (!existingItem) return;
 
       const nextQuantity = existingItem.quantity + 1;
       updateStoredCartItems((currentItems) =>
         currentItems.map((item) =>
-          item.product_id === productId
+          getCartItemKey(item.product_id, item.product_variant_id) === itemKey
             ? { ...item, quantity: nextQuantity }
             : item,
         ),
@@ -369,14 +425,19 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const removeItem = useCallback(
-    (productId: string) => {
+    (productId: string, productVariantId?: string) => {
+      const itemKey = getCartItemKey(productId, productVariantId);
       const existingItem = readStoredCartItems().find(
-        (item) => item.product_id === productId,
+        (item) =>
+          getCartItemKey(item.product_id, item.product_variant_id) === itemKey,
       );
       if (!existingItem) return;
 
       updateStoredCartItems((currentItems) =>
-        currentItems.filter((item) => item.product_id !== productId),
+        currentItems.filter(
+          (item) =>
+            getCartItemKey(item.product_id, item.product_variant_id) !== itemKey,
+        ),
       );
 
       if (hasAccessToken && existingItem.id) {
@@ -391,21 +452,23 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   );
 
   const decrementItem = useCallback(
-    (productId: string) => {
+    (productId: string, productVariantId?: string) => {
+      const itemKey = getCartItemKey(productId, productVariantId);
       const existingItem = readStoredCartItems().find(
-        (item) => item.product_id === productId,
+        (item) =>
+          getCartItemKey(item.product_id, item.product_variant_id) === itemKey,
       );
       if (!existingItem) return;
 
       const nextQuantity = existingItem.quantity - 1;
       if (nextQuantity <= 0) {
-        removeItem(productId);
+        removeItem(productId, productVariantId);
         return;
       }
 
       updateStoredCartItems((currentItems) =>
         currentItems.map((item) =>
-          item.product_id === productId
+          getCartItemKey(item.product_id, item.product_variant_id) === itemKey
             ? { ...item, quantity: nextQuantity }
             : item,
         ),

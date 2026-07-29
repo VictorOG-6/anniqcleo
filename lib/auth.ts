@@ -51,12 +51,16 @@ export const storeAuthToken = async (
 ): Promise<void> => {
   try {
     // For Next.js web app - use server action or API route to set httpOnly cookie
-    await fetch("/api/auth/session", {
+    const response = await fetch("/api/auth/session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ accessToken, refreshToken }),
       credentials: "include", // Important for cookies
     });
+
+    if (!response.ok) {
+      throw new Error("Failed to create session");
+    }
   } catch (error) {
     console.error("Failed to store auth token:", error);
     throw new Error("Session storage failed");
