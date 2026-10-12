@@ -1,26 +1,21 @@
 import type { Metadata } from "next";
-import { Roboto, Inter, Roboto_Mono } from "next/font/google";
+import { Cormorant_Garamond, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import Providers from "@/lib/provider";
 import { Toaster } from "sonner";
 
-const robotoMono = Roboto_Mono({
-  variable: "--font-roboto-mono",
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta",
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
 });
 
-const roboto = Roboto({
-  variable: "--font-roboto",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  weight: ["300", "400", "500", "600", "700"],
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -38,16 +33,19 @@ export default function RootLayout({
     <html
       lang="en"
       className={cn(
-        "h-full",
+        "h-full scroll-smooth",
         "antialiased",
-        roboto.variable,
-        inter.variable,
+        plusJakartaSans.variable,
+        cormorant.variable,
         "font-sans",
-        robotoMono.variable,
       )}
     >
       <body
-        className={`${roboto.variable} ${robotoMono.variable} ${inter.variable} antialiased flex flex-col items-center`}
+        className={cn(
+          plusJakartaSans.variable,
+          cormorant.variable,
+          "antialiased flex min-h-full flex-col items-center",
+        )}
       >
         <Providers>
           {children}

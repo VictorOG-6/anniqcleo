@@ -42,7 +42,7 @@ const Footer = () => {
           </div>
           <div className="flex flex-col md:flex-row gap-20">
             <div className="flex flex-col gap-5 text-secondary text-lg">
-              <h3 className="font-bold">Shop</h3>
+              <h3 className="font-display text-xl font-semibold">Shop</h3>
               <Link
                 href="/shop"
                 className="cursor-pointer transition-all duration-300 hover:text-primary"
@@ -69,7 +69,7 @@ const Footer = () => {
               </Link>
             </div>
             <div className="flex flex-col gap-5 text-secondary text-lg">
-              <h3 className="font-bold">Company</h3>
+              <h3 className="font-display text-xl font-semibold">Company</h3>
               <Link
                 href="/about"
                 className="cursor-pointer transition-all duration-300 hover:text-primary"
@@ -90,7 +90,7 @@ const Footer = () => {
               </Link>
             </div>
             <div className="flex flex-col gap-5 text-secondary text-lg">
-              <h3 className="font-bold">Need Help</h3>
+              <h3 className="font-display text-xl font-semibold">Need Help</h3>
               <Link
                 href="/contact"
                 className="cursor-pointer transition-all duration-300 hover:text-primary"
@@ -132,8 +132,8 @@ const Footer = () => {
             </span>
           </div>
         </div>
-        <span className="w-full flex justify-center text-white/45 text-[80px] md:text-[120px] lg:text-[208px] text-center font-medium">
-          ANNIQCLEO
+        <span className="flex w-full justify-center text-center font-display text-[80px] font-medium text-white/45 md:text-[120px] lg:text-[208px]">
+          Anniqcleo
         </span>
       </div>
     </footer>

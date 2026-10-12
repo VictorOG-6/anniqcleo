@@ -4,7 +4,7 @@ import CartItems from "@/components/shared/cart-items";
 import { useCart } from "@/contexts/cart/cart-context";
 import { useCreateOrder } from "@/hooks/order/use-create-order";
 import processError from "@/lib/error";
-import { redirectToPaystack } from "@/lib/paystack";
+import { redirectToPaymentCheckout } from "@/lib/payment-checkout";
 import { formatToNaira } from "@/lib/utils";
 import { AxiosError } from "axios";
 import { ArrowLeft, Loader2, ShoppingBag } from "lucide-react";
@@ -37,7 +37,7 @@ export default function CartPage() {
         clearLocalCart();
 
         try {
-          redirectToPaystack(payment.authorization_url);
+          redirectToPaymentCheckout(payment);
         } catch {
           toast.error(
             "Your order was created, but payment could not be opened. You can retry from the order page.",
@@ -68,7 +68,7 @@ export default function CartPage() {
         </Link>
 
         <div className="flex flex-col gap-3 mb-10">
-          {/* <p className="font-roboto-mono text-primary text-sm">
+          {/* <p className="font-display text-primary text-sm">
             Anniqcleo Cart
           </p> */}
           <h1 className="text-3xl md:text-6xl text-primary">Your Cart</h1>
@@ -86,7 +86,7 @@ export default function CartPage() {
           <aside className="h-fit rounded-[32px] bg-foreground p-6 md:p-8">
             <div className="flex items-center justify-between border-b border-[#D9D9D9] pb-5">
               <div>
-                <h2 className="font-roboto-mono text-xl text-primary">
+                <h2 className="font-display text-xl text-primary">
                   Summary
                 </h2>
                 <p className="text-sm text-secondary">
@@ -118,7 +118,7 @@ export default function CartPage() {
               className="w-full bg-primary flex items-center justify-center gap-2.5 py-3 px-8 text-white font-semibold rounded-2xl shadow-md cursor-pointer transition-all duration-300 hover:bg-primary/80 disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isCreatingOrder && <Loader2 className="h-4 w-4 animate-spin" />}
-              Pay securely with Paystack
+              Pay securely with Afripay
             </button>
 
             {items.length > 0 && (

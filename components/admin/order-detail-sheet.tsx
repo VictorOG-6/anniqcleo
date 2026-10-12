@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import { Loader2 } from "lucide-react";
 import { formatToNaira } from "@/lib/utils";
 import { Order, OrderStatus } from "@/types";
-import { useFetchOrder } from "@/hooks/order/use-fetch-order";
+import { useFetchOrder } from "@/hooks/order/use-fetch-all-order";
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";

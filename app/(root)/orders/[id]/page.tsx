@@ -2,20 +2,14 @@
 
 import { OrderStatusBadge } from "@/components/admin/order-status-badge";
 import { useCancelOrder } from "@/hooks/order/use-cancel-order";
-import { useFetchOrder } from "@/hooks/order/use-fetch-order";
+import { useFetchOrder } from "@/hooks/order/use-fetch-all-order";
 import { useInitializePayment } from "@/hooks/payment/use-initialize-payment";
 import processError from "@/lib/error";
-import { redirectToPaystack } from "@/lib/paystack";
+import { redirectToPaymentCheckout } from "@/lib/payment-checkout";
 import { formatToNaira } from "@/lib/utils";
 import { AxiosError } from "axios";
 import { format } from "date-fns";
-import {
-  ArrowLeft,
-  CreditCard,
-  Loader2,
-  Package,
-  XCircle,
-} from "lucide-react";
+import { ArrowLeft, CreditCard, Loader2, Package, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { toast } from "sonner";
@@ -56,10 +50,10 @@ export default function OrderDetailPage() {
     initializePayment(order.id, {
       onSuccess: (payment) => {
         try {
-          redirectToPaystack(payment.authorization_url);
+          redirectToPaymentCheckout(payment);
         } catch {
           toast.error(
-            "Payment was initialized, but Paystack checkout could not be opened.",
+            "Payment was initialized, but Afripay checkout could not be opened.",
           );
         }
       },
@@ -95,7 +89,7 @@ export default function OrderDetailPage() {
     return (
       <main className="pt-28 md:pt-36">
         <section className="max-w-5xl mx-auto px-5 md:px-0 py-20 text-center">
-          <h1 className="font-roboto-mono text-2xl md:text-4xl text-primary">
+          <h1 className="font-display text-2xl md:text-4xl text-primary">
             Order not found
           </h1>
           <p className="mt-3 text-secondary">
@@ -127,10 +121,10 @@ export default function OrderDetailPage() {
         <div className="rounded-[32px] bg-foreground p-6 md:p-10">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-5 border-b border-[#D9D9D9] pb-6">
             <div>
-              <p className="font-roboto-mono text-primary text-sm">
+              <p className="font-display text-primary text-sm">
                 Order details
               </p>
-              <h1 className="font-roboto-mono text-2xl md:text-4xl text-primary mt-2">
+              <h1 className="font-display text-2xl md:text-4xl text-primary mt-2">
                 #{order.id}
               </h1>
               <p className="text-sm text-secondary mt-2">
@@ -153,7 +147,7 @@ export default function OrderDetailPage() {
                     ) : (
                       <CreditCard size={16} />
                     )}
-                    Pay with Paystack
+                    Pay with Afripay
                   </button>
                 )}
                 {canCancelOrder && (
@@ -200,7 +194,7 @@ export default function OrderDetailPage() {
           </div>
 
           <div className="py-6">
-            <h2 className="font-roboto-mono text-primary text-xl md:text-2xl mb-5">
+            <h2 className="font-display text-primary text-xl md:text-2xl mb-5">
               Items
             </h2>
             {order.order_items?.length ? (

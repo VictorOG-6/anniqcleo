@@ -34,7 +34,7 @@ const OtherProducts = () => {
   return (
     <section className="max-w-7xl mx-auto py-20 px-5 md:px-0 overflow-hidden">
       <div className="flex items-center justify-between text-primary mb-16 md:mb-25 text-center">
-        <h1 className="text-sm md:text-3xl font-roboto-mono">
+        <h1 className="text-sm md:text-3xl font-display">
           You may also like...
         </h1>
         <div className="flex items-center gap-2.5">

@@ -18,7 +18,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Text } from "@/components/ui/text";
 import { formatToNaira } from "@/lib/utils";
 import { DataTable } from "@/components/shared/data-table";
-import { useFetchOrders } from "@/hooks/order/use-fetch-order";
+import { useFetchAllOrders } from "@/hooks/order/use-fetch-all-order";
 
 export default function Orders() {
   const [search, setSearch] = useState("");
@@ -29,7 +29,7 @@ export default function Orders() {
     pageSize: 10,
   });
 
-  const { data: orders = [], isLoading } = useFetchOrders({
+  const { data: orders = [], isLoading } = useFetchAllOrders({
     page_size: pagination.pageSize,
     page: pagination.pageIndex + 1,
     status: statusFilter === "all" ? undefined : (statusFilter as OrderStatus),

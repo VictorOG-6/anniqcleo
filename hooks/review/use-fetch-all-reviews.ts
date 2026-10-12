@@ -6,7 +6,7 @@ import { $http } from "@/lib/http";
 import { reviewKeys } from "@/lib/react-query/query-keys";
 import { ReviewFetchProps } from "@/types";
 
-const useFetchReviews = ({
+const useFetchAllReviews = ({
   page_size = 20,
   page = 1,
   product_id,
@@ -30,4 +30,4 @@ const useFetchReviews = ({
   });
 };
 
-export default useFetchReviews;
+export default useFetchAllReviews;

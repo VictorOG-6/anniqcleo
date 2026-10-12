@@ -24,7 +24,7 @@ const TextBanner = () => {
         `}
       </style>
 
-      <div className="flex w-max whitespace-nowrap gap-9 text-white text-sm md:text-2xl marquee-track">
+      <div className="marquee-track flex w-max gap-9 whitespace-nowrap font-display text-sm tracking-wide text-white md:text-2xl">
         {[...items, ...items].map((text, index) => (
           <React.Fragment key={index}>
             <span>◆</span>

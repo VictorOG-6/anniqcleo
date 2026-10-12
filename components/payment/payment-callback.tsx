@@ -13,7 +13,8 @@ import Link from "next/link";
 
 interface PaymentCallbackProps {
   reference: string | null;
-  hasMismatchedReferences: boolean;
+  callbackStatus: string | null;
+  transactionId: string | null;
 }
 
 const getErrorMessage = (error: unknown) => {
@@ -26,30 +27,57 @@ const getErrorMessage = (error: unknown) => {
   return "We could not confirm this payment. Please try again.";
 };
 
+const isSuccessfulCallbackStatus = (status: string | null) =>
+  status?.toLowerCase() === "successful";
+
 export default function PaymentCallback({
   reference,
-  hasMismatchedReferences,
+  callbackStatus,
+  transactionId,
 }: PaymentCallbackProps) {
+  const shouldVerify =
+    Boolean(reference) &&
+    (callbackStatus === null || isSuccessfulCallbackStatus(callbackStatus));
+
   const {
     data: payment,
     error,
     isLoading,
     isFetching,
     refetch,
-  } = useVerifyPayment(hasMismatchedReferences ? null : reference);
+  } = useVerifyPayment(shouldVerify ? reference : null);
 
   const isSuccess = payment?.status === "success";
   const isFailure =
     payment?.status === "failed" || payment?.status === "abandoned";
-  const isInvalidCallback = hasMismatchedReferences || !reference;
+  const isInvalidCallback = !reference;
+  const callbackIndicatesFailure =
+    callbackStatus !== null && !isSuccessfulCallbackStatus(callbackStatus);
 
-  if (isLoading) {
+  if (isLoading && shouldVerify) {
     return (
       <CallbackCard
         icon={<Loader2 className="h-10 w-10 animate-spin text-primary" />}
         title="Confirming your payment"
-        description="Please keep this page open while we verify the transaction with Paystack."
+        description="Please keep this page open while we verify your Afripay transfer."
       />
+    );
+  }
+
+  if (callbackIndicatesFailure && !payment) {
+    return (
+      <CallbackCard
+        icon={<CircleAlert className="h-10 w-10 text-red-600" />}
+        title="Payment was not completed"
+        description="Afripay reported that this checkout did not complete successfully. You can return to your order and try again."
+      >
+        <Link
+          href="/shop"
+          className="inline-flex items-center justify-center rounded-2xl border border-primary px-5 py-3 font-semibold text-primary"
+        >
+          Return to shop
+        </Link>
+      </CallbackCard>
     );
   }
 
@@ -94,7 +122,11 @@ export default function PaymentCallback({
       <CallbackCard
         icon={<ShieldCheck className="h-10 w-10 text-green-600" />}
         title="Payment confirmed"
-        description="Your payment was successful and your order has been confirmed."
+        description={
+          transactionId
+            ? `Your payment was successful and your order has been confirmed. Transaction ID: ${transactionId}.`
+            : "Your payment was successful and your order has been confirmed."
+        }
       >
         <Link
           href={`/orders/${payment.order_id}`}
@@ -113,8 +145,8 @@ export default function PaymentCallback({
       title={isFailure ? "Payment was not completed" : "Payment is still pending"}
       description={
         isFailure
-          ? "Paystack did not complete this transaction. You can return to your order and try again."
-          : "The transaction has not been confirmed yet. If you completed payment, wait a moment and verify again."
+          ? "Afripay did not complete this transaction. You can return to your order and try again."
+          : "The transfer has not been confirmed yet. If you already paid, wait a moment and verify again."
       }
     >
       {!isFailure && (
@@ -160,7 +192,7 @@ function CallbackCard({
       <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-foreground">
         {icon}
       </div>
-      <p className="font-roboto-mono text-sm text-primary">Secure checkout</p>
+      <p className="font-display text-sm text-primary">Secure checkout</p>
       <h1 className="mt-2 text-3xl text-primary md:text-4xl">{title}</h1>
       <p className="mx-auto mt-4 max-w-md text-secondary">{description}</p>
       {children && (

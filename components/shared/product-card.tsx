@@ -39,12 +39,12 @@ const ProductCard = ({ product }: ProductCardProps) => {
           className="w-37.5 h-50 md:w-60 md:h-80 object-cover border border-gray-200"
         />
         {selectedVariant && (
-          <span className="absolute bottom-2 left-2 font-roboto-mono text-xs text-primary text-shadow-xs">
+          <span className="absolute bottom-2 left-2 font-display text-xs text-primary text-shadow-xs">
             {selectedVariant.name}
           </span>
         )}
       </Link>
-      <div className="flex flex-col items-center gap-2.5 font-roboto-mono">
+      <div className="flex flex-col items-center gap-2.5 font-display">
         <h3 className="text-secondary text-sm md:text-xl">{product.name}</h3>
         <span className="text-[#96959A] text-sm md:text-xl">
           {formatToNaira(product.price)}

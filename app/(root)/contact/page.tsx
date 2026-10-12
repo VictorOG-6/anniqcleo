@@ -27,7 +27,7 @@ const Contact = () => {
               <h2 className="text-sm md:text-xl font-bold">
                 Contact information
               </h2>
-              <p className="max-w-40 text-center md:text-left md:max-w-71.5 text-xs md:text-base font-inter">
+              <p className="max-w-40 text-center md:text-left md:max-w-71.5 text-xs md:text-base font-sans">
                 For inquiries, additional information, or feedback, we welcome
                 you to reach out.{" "}
               </p>

@@ -73,7 +73,7 @@ const ShopContent = () => {
       <section className="bg-foreground py-20">
         <div className="max-w-7xl mx-auto px-5 md:px-0">
           <div className="flex flex-col items-center text-center gap-2.5 md:gap-7">
-            <h1 className="text-primary text-sm md:text-3xl font-roboto-mono">
+            <h1 className="text-primary text-sm md:text-3xl font-display">
               Anniqcleo Collection
             </h1>
             <p className="w-50 md:w-fit text-center text-secondary text-xs md:text-xl">
@@ -88,7 +88,7 @@ const ShopContent = () => {
             {categoryOptions.map((category: string) => (
               <div
                 key={category}
-                className={`flex items-center font-roboto-mono justify-center py-1 px-2 md:px-3.5 cursor-pointer rounded-2xl text-secondary transition-all duration-300 hover:bg-primary hover:text-white ${activeCategory === category ? "bg-primary text-white" : "text-secondary bg-foreground"}`}
+                className={`flex items-center font-display justify-center py-1 px-2 md:px-3.5 cursor-pointer rounded-2xl text-secondary transition-all duration-300 hover:bg-primary hover:text-white ${activeCategory === category ? "bg-primary text-white" : "text-secondary bg-foreground"}`}
                 onClick={() => updateCategory(category)}
               >
                 <p className="text-sm md:text-base">{category}</p>
@@ -172,7 +172,7 @@ const Shop = () => (
         <section className="bg-foreground py-20">
           <div className="max-w-7xl mx-auto px-5 md:px-0">
             <div className="flex flex-col items-center text-center gap-2.5 md:gap-7">
-              <h1 className="text-primary text-sm md:text-3xl font-roboto-mono">
+              <h1 className="text-primary text-sm md:text-3xl font-display">
                 Anniqcleo Collection
               </h1>
               <p className="w-50 md:w-fit text-center text-secondary text-xs md:text-xl">

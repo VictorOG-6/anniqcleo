@@ -26,7 +26,6 @@ const navLinks = [
   { name: "Shop", href: "/shop" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
-  { name: "Shade Finder", href: "/shade-finder" },
 ];
 
 const ADMIN_ROLES = new Set<UserRole>(["admin", "staff"]);
@@ -102,7 +101,7 @@ const Navbar = () => {
           />
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-12 font-inter">
+        <nav className="hidden lg:flex items-center gap-12 font-sans">
           {navLinks.map((link) => (
             <Link
               href={link.href}
@@ -148,7 +147,7 @@ const Navbar = () => {
             <PopoverContent align="end" className="w-86 p-4">
               <div className="flex flex-col gap-5">
                 <div className="flex items-center justify-between">
-                  <h2 className="font-roboto-mono text-sm font-medium text-primary">
+                  <h2 className="font-display text-sm font-medium text-primary">
                     Anniqcleo Cart
                   </h2>
                   <span className="text-xs text-secondary">
@@ -217,7 +216,20 @@ const Navbar = () => {
                     <h2>Hi! {user.name.split(" ")[0]}</h2>
                     <p className="text-xs text-gray-500">{user.email}</p>
                   </div>
-                  <button
+                  <Link
+                    href="/profile"
+                    className="rounded-xl bg-white flex items-center justify-center px-2.5 py-1.5 mt-3 w-45 text-gray-600 duration-300 transition-all hover:bg-neutral-100 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 ">My Profile</div>
+                  </Link>
+                  <p
+                    onClick={() => logout()}
+                    className="flex items-center gap-2 text-xs text-red-500 cursor-pointer duration-300 transition-all hover:text-red-700 my-2"
+                  >
+                    <LogOut size={14} />
+                    {isLoading ? "Signing out..." : "Sign Out"}
+                  </p>
+                  {/* <button
                     className="rounded-xl bg-white flex items-center justify-center px-2.5 py-1.5 my-3 w-45 text-gray-600 duration-300 transition-all hover:text-red-500 cursor-pointer"
                     onClick={() => logout()}
                   >
@@ -225,18 +237,18 @@ const Navbar = () => {
                       <LogOut size={14} />
                       {isLoading ? "Signing out..." : "Sign Out"}
                     </div>
-                  </button>
+                  </button> */}
                   <div className="flex items-center gap-1.5 text-black text-[10px]">
                     <Link
                       href="/privacy-policy"
-                      className="cursor-pointer transition-all duration-300 hover:text-primary"
+                      className="cursor-pointer transition-all duration-300 hover:text-blue-700"
                     >
                       Privacy Policy
                     </Link>
                     <span className="bg-black w-0.5 h-0.5 rounded-full" />
                     <Link
                       href="/terms-and-condition"
-                      className="cursor-pointer transition-all duration-300 hover:text-primary"
+                      className="cursor-pointer transition-all duration-300 hover:text-blue-700"
                     >
                       Terms and Conditions
                     </Link>
@@ -299,7 +311,7 @@ const Navbar = () => {
             <Link
               href="/admin"
               onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-2 px-6 py-3 border-b border-[#8E8E93] font-inter text-sm hover:text-primary transition-colors ${
+              className={`flex items-center gap-2 px-6 py-3 border-b border-[#8E8E93] font-sans text-sm hover:text-primary transition-colors ${
                 pathname.startsWith("/admin") ? "text-primary" : "text-black"
               }`}
             >
@@ -311,7 +323,7 @@ const Navbar = () => {
               key={link.href}
               href={link.href}
               onClick={() => setIsOpen(false)}
-              className={`px-6 py-3 border-b border-[#8E8E93] font-inter text-sm hover:text-primary transition-colors ${
+              className={`px-6 py-3 border-b border-[#8E8E93] font-sans text-sm hover:text-primary transition-colors ${
                 isActive(link.href) ? "text-primary" : "text-black"
               }`}
             >
